@@ -9,16 +9,26 @@ Uses spherical angular motion physics for all objects. Player's VR head is locat
 ![screenshot](/../master/sphere.jpg?raw=true) 
 
 Uses 3 Skyboxes https://www.assetstore.unity3d.com/en/#!/content/25142 by Bright Shining Star http://brightshiningstar.webs.com
+
 Sound effects by bxfr http://www.bfxr.net/
+
 Engine sound from Oculus Audio Pack 1 https://developer3.oculus.com/downloads/audio/1.0/Oculus_Audio_Pack_1/
+
 Models made in Blender http://blender.org/
 
 Links
 http://unity3d.com/
+
 https://developer.oculus.com/downloads/game-engines/
+
 https://www.udemy.com/blendertutorial/
+
 https://www.udemy.com/unitycourse
+
 https://www.udemy.com/
+
 http://www.bentristem.com/
+
 http://fractallambda.com/
+
 http://www.embraceitnottingham.co.uk/
