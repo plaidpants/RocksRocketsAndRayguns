@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class ShotSphere : MonoBehaviour {
+public class ShotSphere : NetworkBehaviour {
 
     public GameObject shotPrefab;
     GameObject shot;
@@ -17,6 +18,8 @@ public class ShotSphere : MonoBehaviour {
 
         //reset the position back to the center
         transform.position = Vector3.zero;
+
+        // we use the rotation that was set by the player object
 
         shot = transform.FindChild("shot").gameObject;
 

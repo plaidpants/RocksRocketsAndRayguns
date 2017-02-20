@@ -25,8 +25,6 @@ using UnityEngine.Networking;
 
 public class RocketSphere : NetworkBehaviour
 {
-
-    public GameObject rocketPrefab;
     GameObject rocket;
     public float radius;
     public float rotationSpeed;
@@ -46,6 +44,8 @@ public class RocketSphere : NetworkBehaviour
     bool engineOn = false;
     [SyncVar]
     float engineStartLifetime = 0;
+    Rigidbody rb;
+    NetworkView nView;
 
     // Use this for initialization
     void Start()
@@ -56,6 +56,7 @@ public class RocketSphere : NetworkBehaviour
 
         //reset the position back to the center
         transform.position = Vector3.zero;
+        transform.rotation = Quaternion.identity;
 
         Vector3 pos = Vector3.forward * radius;
         Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
@@ -72,16 +73,54 @@ public class RocketSphere : NetworkBehaviour
         mainModule = engineParticleSystem.main;
         engineSound = transform.Find("Rocket").transform.GetComponent<AudioSource>();
         hyperspaceSound = transform.GetComponent<AudioSource>();
+        rb = transform.GetComponent<Rigidbody>();
+        nView = GetComponent<NetworkView>();
     }
 
+    [ClientRpc]
+    void RpcMySetActive(bool active)
+    {
+        rocket.SetActive(active);
+    }
+
+    void SpawnShip()
+    {
+        rocket.transform.position = Vector3.zero;
+        transform.position = Vector3.zero;
+        transform.rotation = Quaternion.identity;
+
+        Vector3 pos = Vector3.forward * radius;
+        Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
+        rocket.transform.position = pos;
+        rocket.transform.rotation = rot;
+
+        rb.isKinematic = false;
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        RpcMySetActive(true);
+        
+        rocket.SetActive(true);
+        destroyed = false;
+        hyperspaceSound.Play();
+    }
+    
     void OnTriggerEnter(Collider other)
     {
-        if (destroyed == false)
+        if (isServer)
         {
-            destroyed = true;
-            Destroy(transform.gameObject);
-            GameObject explosion = Instantiate(explosionPrefab, rocket.transform.position, Quaternion.identity) as GameObject;
-            GameObject spawn = Instantiate(spawnPrefab, rocket.transform.position, rocket.transform.rotation) as GameObject;
+            if (destroyed == false)
+            {
+                destroyed = true;
+                //Destroy(transform.gameObject);
+                GameObject explosion = Instantiate(explosionPrefab, rocket.transform.position, Quaternion.identity) as GameObject;
+                //GameObject spawn = Instantiate(spawnPrefab, rocket.transform.position, rocket.transform.rotation) as GameObject;
+                rocket.SetActive(false);
+                RpcMySetActive(false);
+                rb.isKinematic = true;
+
+                Invoke("SpawnShip", 5);
+            }
         }
     }
 

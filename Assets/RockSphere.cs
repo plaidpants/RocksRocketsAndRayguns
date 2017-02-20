@@ -1,10 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class RockSphere : MonoBehaviour {
-
-    public GameObject rockPrefab;
+public class RockSphere : NetworkBehaviour {
+    
     GameObject rock;
     public float minSpeed;
     public float maxSpeed;
@@ -23,6 +23,7 @@ public class RockSphere : MonoBehaviour {
 
         //reset the position back to the center
         transform.position = Vector3.zero;
+        transform.rotation = Quaternion.identity;
 
         //calculate random position and rotate so it faces the center
         //Vector3 pos = Random.onUnitSphere * radius;
@@ -48,18 +49,23 @@ public class RockSphere : MonoBehaviour {
 
     void OnTriggerEnter(Collider other)
     {
-        if (destroyed == false)
+        if (isServer)
         {
-            destroyed = true;
-            Destroy(transform.gameObject);
-            count--;
-
-            GameObject explosion = Instantiate(explosionPrefab, rock.transform.position, Quaternion.identity) as GameObject;
-            if (rockSpherePrefab)
+            if (destroyed == false)
             {
-                for (int i = 0; i < pieces; i++)
+                destroyed = true;
+                Destroy(transform.gameObject);
+                count--;
+
+                GameObject explosion = Instantiate(explosionPrefab, rock.transform.position, Quaternion.identity) as GameObject;
+                NetworkServer.Spawn(explosion);
+                if (rockSpherePrefab)
                 {
-                    GameObject newRock = Instantiate(rockSpherePrefab, rock.transform.position, rock.transform.rotation) as GameObject;
+                    for (int i = 0; i < pieces; i++)
+                    {
+                        GameObject newRock = Instantiate(rockSpherePrefab, rock.transform.position, rock.transform.rotation) as GameObject;
+                        NetworkServer.Spawn(newRock);
+                    }
                 }
             }
         }
