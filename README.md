@@ -4,6 +4,10 @@ Multiplayer VR Spaceship and Rock shooter, focus on support for GearVR but will 
 
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/k03XqD0PCIc/0.jpg)](http://www.youtube.com/watch?v=k03XqD0PCIc "Rocks Rockets And Rayguns")
 
+I got tied of waiting for sphereFACE be released so I decided to make my own.
+https://www.kickstarter.com/projects/voxelstorm/sphereface
+https://voxelstorm.itch.io
+
 ![screenshot](/../master/vr_screenshot_01.jpg?raw=true) 
 
 Uses spherical angular motion physics for all objects. Player's VR head is located at the center of a sphere and all objects orbit around.
