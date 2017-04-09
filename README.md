@@ -2,6 +2,8 @@
 
 Multiplayer VR Spaceship and Rock shooter, focus on support for GearVR but will work on other platforms. Current version in respository is not working yet. Release version is available with single player.
 
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/k03XqD0PCIc/0.jpg)](http://www.youtube.com/watch?v=k03XqD0PCIc "Rocks Rockets And Rayguns")
+
 ![screenshot](/../master/vr_screenshot_01.jpg?raw=true) 
 
 Uses spherical angular motion physics for all objects. Player's VR head is located at the center of a sphere and all objects orbit around.
