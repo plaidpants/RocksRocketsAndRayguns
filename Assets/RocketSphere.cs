@@ -4,26 +4,26 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 //ideas
-//fixed wormhole between two depth levels
-//hyperspace between two depth levels
-//multiplayer
-//shield, use physics to bounce off rocks and other ships
-// ufo
-// radar circle indicating rocks, ufos, enemy rockets around
+// fixed wormhole between two depth levels
+// hyperspace between two depth levels
+// multi-player
+// shield, use physics to bounce off rocks and other ships
+// UFO
+// radar circle indicating rocks, UFOs, enemy rockets around
 // black holes/gravity
 // make front transparent when in background
-//bright light shots with lens flare
+// bright light shots with lens flare
 // readjust center point if head moves too far away from center
 
-//rockets, rocks and rayguns
+//rockets, rocks and ray-guns
 // stick man astronauts
-// connected bar between ships co-operative multiplayer
+// connected bar between ships co-operative multi-player
 // multiple universes, travel between with wormholes to new play area, have level progression or adventure game
 
 // laser instead of shots will cut rocks om half instead of break them up in two.
 // need to scale speed (ship and shot and rocks) by radius otherwise the outer layers get really fast
 
-public class RocketSphere : NetworkBehaviour
+public class RocketSphere : MonoBehaviour
 {
     GameObject rocket;
     public float radius;
@@ -40,12 +40,9 @@ public class RocketSphere : NetworkBehaviour
     public GameObject explosionPrefab;
     public GameObject spawnPrefab;
     bool destroyed = false;
-    [SyncVar]
     bool engineOn = false;
-    [SyncVar]
     float engineStartLifetime = 0;
     Rigidbody rb;
-    NetworkView nView;
 
     // Use this for initialization
     void Start()
@@ -63,21 +60,22 @@ public class RocketSphere : NetworkBehaviour
 
         //rocket = Instantiate(rocketPrefab, pos, rot) as GameObject;
         //rocket.transform.SetParent(transform);
-        rocket = transform.FindChild("Rocket").gameObject;
+        rocket = transform.Find("Rocket").gameObject;
         rocket.transform.position = pos;
         rocket.transform.rotation = rot;
 
-        GameObject engine = transform.FindChild("Rocket").Find("Engine").gameObject;
+        GameObject engine = transform.Find("Rocket").Find("Engine").gameObject;
         engineParticleSystem = engine.GetComponent<ParticleSystem>();
         emissionModule = engineParticleSystem.emission;
         mainModule = engineParticleSystem.main;
         engineSound = transform.Find("Rocket").transform.GetComponent<AudioSource>();
         hyperspaceSound = transform.GetComponent<AudioSource>();
         rb = transform.GetComponent<Rigidbody>();
-        nView = GetComponent<NetworkView>();
+ 
+            PlayerTracker.SetTrackingObject(rocket.gameObject);
+            Debug.Log("set");
     }
-
-    [ClientRpc]
+    
     void RpcMySetActive(bool active)
     {
         rocket.SetActive(active);
@@ -107,8 +105,6 @@ public class RocketSphere : NetworkBehaviour
     
     void OnTriggerEnter(Collider other)
     {
-        if (isServer)
-        {
             if (destroyed == false)
             {
                 destroyed = true;
@@ -121,12 +117,8 @@ public class RocketSphere : NetworkBehaviour
 
                 Invoke("SpawnShip", 5);
             }
-        }
     }
 
-    // This [Command] code is called on the Client …
-    // … but it is run on the Server!
-    [Command]
     void CmdFire()
     {
         // ??? need to move the shot spawn point to just in front of the rocket
@@ -143,9 +135,6 @@ public class RocketSphere : NetworkBehaviour
 
         Vector3 torque = Vector3.Cross(transform.rotation * Vector3.right, transform.rotation * Vector3.forward);
         rb.AddTorque(torque.normalized * (shotSpeed / radius));
-
-        // Spawn the bullet on the Clients
-        NetworkServer.Spawn(shot);
     }
 
     void FixedUpdate()
@@ -159,11 +148,6 @@ public class RocketSphere : NetworkBehaviour
         {
             emissionModule.enabled = false;
             mainModule.startLifetime = 0;
-        }
-
-        if (!isLocalPlayer)
-        {
-            return;
         }
 
         float rotation = Input.GetAxis("Horizontal") * rotationSpeed * Time.deltaTime;

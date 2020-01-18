@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class RockSphere : NetworkBehaviour {
-    
+public class RockSphere : MonoBehaviour
+{ 
     GameObject rock;
     public float minSpeed;
     public float maxSpeed;
@@ -31,7 +31,7 @@ public class RockSphere : NetworkBehaviour {
 
         // create the rock at that location
         //rock = Instantiate(rockPrefab, pos, rot) as GameObject;
-        rock = transform.FindChild("Rock").gameObject;
+        rock = transform.Find("Rock").gameObject;
         rock.transform.position = pos;
         rock.transform.rotation = rot;
 
@@ -49,31 +49,28 @@ public class RockSphere : NetworkBehaviour {
 
     void OnTriggerEnter(Collider other)
     {
-        if (isServer)
+        if (destroyed == false)
         {
-            if (destroyed == false)
-            {
-                destroyed = true;
-                Destroy(transform.gameObject);
-                count--;
+            destroyed = true;
+            Destroy(transform.gameObject);
+            count--;
 
-                GameObject explosion = Instantiate(explosionPrefab, rock.transform.position, Quaternion.identity) as GameObject;
-                NetworkServer.Spawn(explosion);
-                if (rockSpherePrefab)
+            GameObject explosion = Instantiate(explosionPrefab, rock.transform.position, Quaternion.identity) as GameObject;
+
+            if (rockSpherePrefab)
+            {
+                for (int i = 0; i < pieces; i++)
                 {
-                    for (int i = 0; i < pieces; i++)
-                    {
-                        GameObject newRock = Instantiate(rockSpherePrefab, rock.transform.position, rock.transform.rotation) as GameObject;
-                        NetworkServer.Spawn(newRock);
-                    }
+                    GameObject newRock = Instantiate(rockSpherePrefab, rock.transform.position, rock.transform.rotation) as GameObject;
                 }
             }
         }
     }
 
     // Update is called once per frame
-    void Update () {
+    void Update ()
+    {
         float rotation =  rotationSpeed * Time.deltaTime;
-        transform.Rotate(0, 0, -rotation);
+        transform.Rotate(0, rotation, 0);
     }
 }

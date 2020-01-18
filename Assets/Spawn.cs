@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class Spawn : NetworkBehaviour {
+public class Spawn : MonoBehaviour {
 
     public float delay;
     public GameObject rocketSpherePrefab;
@@ -20,7 +20,6 @@ public class Spawn : NetworkBehaviour {
             Destroy(transform.gameObject);
             //GameObject RocketSphere = Instantiate(rocketSpherePrefab, transform.position, transform.rotation) as GameObject;
             GameObject RocketSphere = Instantiate(rocketSpherePrefab, Vector3.zero, Quaternion.identity) as GameObject;
-            NetworkServer.SpawnWithClientAuthority(RocketSphere, RocketSphere);
             //ClientScene.AddPlayer(
         }
     }

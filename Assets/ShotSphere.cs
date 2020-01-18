@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class ShotSphere : NetworkBehaviour {
+public class ShotSphere : MonoBehaviour {
 
     public GameObject shotPrefab;
     GameObject shot;
@@ -21,7 +21,7 @@ public class ShotSphere : NetworkBehaviour {
 
         // we use the rotation that was set by the player object
 
-        shot = transform.FindChild("shot").gameObject;
+        shot = transform.Find("shot").gameObject;
 
         //shot = Instantiate(shotPrefab, Vector3.zero, Quaternion.identity) as GameObject;
         //shot.transform.SetParent(transform);
