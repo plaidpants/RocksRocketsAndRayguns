@@ -2,6 +2,17 @@
 
 Multiplayer VR Spaceship and Rock shooter, focus on support for GearVR but will work on other platforms. Current version in respository is not working yet. Release version is available with single player.
 
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/k03XqD0PCIc/0.jpg)](http://www.youtube.com/watch?v=k03XqD0PCIc "Rocks Rockets And Rayguns")
+
+I got tired of waiting for sphereFACE be released so I decided to make my own. [UPDATE] it has finally been released.
+http://sphereFACE.com
+
+https://voxelstorm.itch.io/sphereface
+
+http://store.steampowered.com/app/485680/sphereFACE/
+
+https://www.kickstarter.com/projects/voxelstorm/sphereface
+
 ![screenshot](/../master/vr_screenshot_01.jpg?raw=true) 
 
 Uses spherical angular motion physics for all objects. Player's VR head is located at the center of a sphere and all objects orbit around.
@@ -15,6 +26,8 @@ Sound effects by bxfr http://www.bfxr.net/
 Engine sound from Oculus Audio Pack 1 https://developer3.oculus.com/downloads/audio/1.0/Oculus_Audio_Pack_1/
 
 Models made in Blender http://blender.org/
+
+This game is not licensed by Atari.
 
 Links
 
