@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using Mirror;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Explosion : MonoBehaviour {
+public class Explosion : NetworkBehaviour
+{
 
     public float lifetime;
 

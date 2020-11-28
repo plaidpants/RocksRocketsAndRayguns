@@ -1,9 +1,11 @@
-﻿using System.Collections;
+﻿using Mirror;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class Spawn : MonoBehaviour {
+public class Spawn : NetworkBehaviour
+{
 
     public float delay;
     public GameObject rocketSpherePrefab;

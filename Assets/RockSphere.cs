@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using Mirror;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class RockSphere : MonoBehaviour
+public class RockSphere : NetworkBehaviour
 { 
     GameObject rock;
     public float minSpeed;
@@ -11,12 +12,15 @@ public class RockSphere : MonoBehaviour
     public GameObject explosionPrefab;
     public GameObject rockSpherePrefab;
     public int pieces;
-    public float rotationSpeed;
-    bool destroyed = false;
+    //public float rotationSpeed;
+    [SyncVar] bool destroyed = false;
     public static int count = 0;
 
     // Use this for initialization
-    void Start () {
+    
+    [Server]
+    void Start ()
+    {
         // get the current radius from position
         float radius = transform.position.magnitude;
         Vector3 pos = transform.position;
@@ -31,7 +35,7 @@ public class RockSphere : MonoBehaviour
 
         // create the rock at that location
         //rock = Instantiate(rockPrefab, pos, rot) as GameObject;
-        rock = transform.Find("Rock").gameObject;
+        rock = transform.Find("Rock.old").gameObject;
         rock.transform.position = pos;
         rock.transform.rotation = rot;
 
@@ -47,21 +51,24 @@ public class RockSphere : MonoBehaviour
         count++;
      }
 
+    [ServerCallback]
     void OnTriggerEnter(Collider other)
     {
         if (destroyed == false)
         {
+            GameObject explosion = Instantiate(explosionPrefab, rock.transform.position, Quaternion.identity) as GameObject;
+            NetworkServer.Spawn(explosion);
+
             destroyed = true;
             Destroy(transform.gameObject);
             count--;
-
-            GameObject explosion = Instantiate(explosionPrefab, rock.transform.position, Quaternion.identity) as GameObject;
 
             if (rockSpherePrefab)
             {
                 for (int i = 0; i < pieces; i++)
                 {
                     GameObject newRock = Instantiate(rockSpherePrefab, rock.transform.position, rock.transform.rotation) as GameObject;
+                    NetworkServer.Spawn(newRock);
                 }
             }
         }
@@ -70,7 +77,7 @@ public class RockSphere : MonoBehaviour
     // Update is called once per frame
     void Update ()
     {
-        float rotation =  rotationSpeed * Time.deltaTime;
-        transform.Rotate(0, rotation, 0);
+        //float rotation =  rotationSpeed * Time.deltaTime;
+        //transform.Rotate(0, rotation, 0);
     }
 }

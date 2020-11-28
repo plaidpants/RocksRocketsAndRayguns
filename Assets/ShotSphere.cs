@@ -1,9 +1,11 @@
-﻿using System.Collections;
+﻿using Mirror;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class ShotSphere : MonoBehaviour {
+public class ShotSphere : NetworkBehaviour
+{
 
     public GameObject shotPrefab;
     GameObject shot;
