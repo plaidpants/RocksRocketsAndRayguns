@@ -27,6 +27,11 @@ Engine sound from Oculus Audio Pack 1 https://developer3.oculus.com/downloads/au
 
 Models made in Blender http://blender.org/
 
+Music by Andrew Surine
+
+https://spaaace.bandcamp.com/
+https://soundcloud.com/user-860031864
+
 This game is not licensed by Atari.
 
 Links
