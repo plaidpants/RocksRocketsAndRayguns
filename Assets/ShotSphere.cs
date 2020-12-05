@@ -10,7 +10,7 @@ public class ShotSphere : NetworkBehaviour
     public GameObject shotPrefab;
     GameObject shot;
     public GameObject explosionPrefab;
-    bool destroyed = false;
+    [SyncVar] bool destroyed = false;
 
     // Use this for initialization
     void Start()

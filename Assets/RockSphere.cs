@@ -77,6 +77,10 @@ public class RockSphere : NetworkBehaviour
     // Update is called once per frame
     void Update ()
     {
+        //Rigidbody rb = GetComponent<Rigidbody>();
+        //Quaternion turn = Quaternion.Euler(0f, 0f, -10);
+        //rb.MoveRotation(rb.rotation * turn);
+
         //float rotation =  rotationSpeed * Time.deltaTime;
         //transform.Rotate(0, rotation, 0);
     }

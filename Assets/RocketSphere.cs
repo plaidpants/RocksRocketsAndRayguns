@@ -44,6 +44,9 @@ public class RocketSphere : NetworkBehaviour
     [SyncVar] bool engineOn = false;
     [SyncVar] float engineStartLifetime = 0;
     Rigidbody rb;
+    bool lastEngineOn;
+    float lastRadius;
+    Color RocketColor;
 
     // Use this for initialization
     void Start()
@@ -73,61 +76,77 @@ public class RocketSphere : NetworkBehaviour
         engineSound = transform.Find("Rocket").transform.GetComponent<AudioSource>();
         hyperspaceSound = transform.GetComponent<AudioSource>();
         rb = transform.GetComponent<Rigidbody>();
- 
-        PlayerTracker.SetTrackingObject(rocket.gameObject);
-        Debug.Log("set");
+        //RocketColor = new Color(Random.Range(64, 255), Random.Range(64, 255), Random.Range(64, 255));
+        //GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.red);
+
+        //        PlayerTracker.SetTrackingObject(rocket.gameObject);
+        //        Debug.Log("set");
+
+        DontDestroyOnLoad(this);
+
+        if (isLocalPlayer)
+            Camera.main.GetComponent<CameraFollow360>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
     }
-    
+
     [ClientRpc]
     void RpcMySetActive(bool active)
     {
         rocket.SetActive(active);
     }
 
+    [Command]
+    void CmdMySetActive(bool active)
+    {
+        RpcMySetActive(active);
+    }
+
+    [Command]
+    void CmdSpawnShip()
+    {
+        SpawnShip();
+    }
+
     void SpawnShip()
     {
-        rocket.transform.position = Vector3.zero;
-        transform.position = Vector3.zero;
-        transform.rotation = Quaternion.identity;
+        // initial rotation of new spacecraft at current camera rotation so player can orient spawn position to a safe spot
+        transform.rotation = Camera.main.transform.rotation;
 
-        Vector3 pos = Vector3.forward * radius;
-        Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
-        rocket.transform.position = pos;
-        rocket.transform.rotation = rot;
-
-        rb.isKinematic = false;
+        // set player ship to be stopped
         rb.velocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
+        // restart rb movement
+        rb.isKinematic = false; 
 
+        // re-enable player rocket
         rocket.SetActive(true);
-        RpcMySetActive(true);
+        // re-enable this rocket on all clients through server
+        CmdMySetActive(true);
 
+        // update syncVar indication player rocket state
         destroyed = false;
-        hyperspaceSound.Play();
     }
-    
+
+
     [Server]
     void OnTriggerEnter(Collider other)
     {
+        if (!isLocalPlayer) return;
+
         if (destroyed == false)
         {
             destroyed = true;
-            //Destroy(transform.gameObject);
             GameObject explosion = Instantiate(explosionPrefab, rocket.transform.position, Quaternion.identity) as GameObject;
-            NetworkServer.Spawn(explosion, connectionToClient);
-            //GameObject spawn = Instantiate(spawnPrefab, rocket.transform.position, rocket.transform.rotation) as GameObject;
+            NetworkServer.Spawn(explosion);
             rocket.SetActive(false);
-            RpcMySetActive(false);
-            rb.isKinematic = true;
+            CmdMySetActive(false);
+            rb.isKinematic = true; // stop the ship from moving due to rb momentum
 
             Invoke("SpawnShip", 5);
         }
     }
 
-    [Command]
-    void CmdFire()
+    [Server]
+    void Fire()
     {
-        // ??? need to move the shot spawn point to just in front of the rocket
         Vector3 pos = transform.rotation * Vector3.forward * radius + Vector3.Cross(transform.rotation * Vector3.down, transform.rotation * Vector3.forward);
         Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
 
@@ -135,26 +154,26 @@ public class RocketSphere : NetworkBehaviour
 
         shot.transform.rotation = transform.rotation;
 
-        Rigidbody rb = shot.GetComponent<Rigidbody>();
-        Rigidbody rb1 = GetComponent<Rigidbody>();
-        rb.angularVelocity = rb1.angularVelocity;
+        Rigidbody rbshot = shot.GetComponent<Rigidbody>();
+        rbshot.angularVelocity = rb.angularVelocity;
 
         Vector3 torque = Vector3.Cross(transform.rotation * Vector3.right, transform.rotation * Vector3.forward);
-        rb.AddTorque(torque.normalized * (shotSpeed / radius));
+        rbshot.AddTorque(torque.normalized * (shotSpeed / radius));
 
-        NetworkServer.Spawn(shot, connectionToClient);
+        // need to rotate the shot just in front of the rocket
+        Quaternion turn = Quaternion.Euler(0f, -40f/radius, 0f);
+        rbshot.MoveRotation(rbshot.rotation * turn);
+
+        NetworkServer.Spawn(shot);
     }
 
-    [Command]
-    void CmdEngineOn()
+    void EngineOn()
     {
-        engineSound.Play();
         //emissionModule.enabled = true;
         engineOn = true;
     }
-
-    [Command]
-    void CmdEngineForward(float forward)
+    
+    void EngineForward(float forward)
     {
         if (forward > 0.1f)
         {
@@ -171,33 +190,28 @@ public class RocketSphere : NetworkBehaviour
             mainModule.startLifetime = engineStartLifetime;
         }
     }
-
-    [Command]
-    void CmdEngineOff()
+    
+    void EngineOff()
     {
         engineSound.volume = 0.0f;
-        engineSound.Stop();
         emissionModule.enabled = false;
         engineStartLifetime = 0;
         mainModule.startLifetime = engineStartLifetime;
         engineOn = false;
     }
 
-    //??? this should really animate between levels and make a hyperspace sound
-    [Command]
-    void CmdHyperspace()
+    //??? this would be nice to animate between radius levels
+    void Hyperspace()
     {
         if (rocket.transform.position.magnitude < 15)
         {
             rocket.transform.position = transform.rotation * Vector3.forward * 30;
             radius = 30;
-            hyperspaceSound.Play();
         }
         else
         {
             rocket.transform.position = transform.rotation * Vector3.forward * 10;
             radius = 10;
-            hyperspaceSound.Play();
         }
     }
 
@@ -207,57 +221,68 @@ public class RocketSphere : NetworkBehaviour
         {
             mainModule.startLifetime = engineStartLifetime;
             emissionModule.enabled = true;
+            if (lastEngineOn != engineOn)
+            {
+                // start playing the engine sound if state has changed
+                engineSound.Play();
+                lastEngineOn = engineOn;
+            }
         }
         else
         {
             emissionModule.enabled = false;
             mainModule.startLifetime = 0;
+            if (lastEngineOn != engineOn)
+            {
+                // stop playing the engine sound if state has changed
+                engineSound.Stop();
+                lastEngineOn = engineOn;
+            }
         }
 
-        if (isLocalPlayer == false)
+        if (lastRadius != radius)
         {
-            return;
+            // play the hyperspace sound if the radius has changed
+            hyperspaceSound.Play();
+            lastRadius = radius;
         }
+
+        if (!isLocalPlayer) return;
 
         float rotation = Input.GetAxis("Horizontal") * rotationSpeed * Time.deltaTime;
-        transform.Rotate(0, 0, -rotation);
 
-        Vector3 torque1 = Vector3.Cross(transform.rotation * Vector3.right, transform.rotation * Vector3.forward);
-        //Debug.DrawRay(transform.position, transform.rotation * Vector3.forward * radius);
-        Debug.DrawRay(transform.rotation * Vector3.forward * radius, Vector3.Cross(transform.rotation * Vector3.down, transform.rotation * Vector3.forward) * 0.7f);
-        //Debug.DrawRay(transform.rotation * Vector3.forward * radius, torque1);
-        //Debug.DrawRay(Vector3.zero, torque1);
+        Quaternion turn = Quaternion.Euler(0f, 0f, -rotation);
+        rb.MoveRotation(rb.rotation * turn);
 
         float forward = Input.GetAxis("Vertical");
         if (forward > 0)
         {
-            Rigidbody rb = GetComponent<Rigidbody>();
             Vector3 torque = Vector3.Cross(transform.rotation * Vector3.right, transform.rotation * Vector3.forward);
             rb.AddTorque(torque.normalized * (forward * forwardSpeed * Time.deltaTime / radius));
 
             if (engineOn == false)
             {
-                CmdEngineOn();
+                EngineOn();
             }
 
-            CmdEngineForward(forward);
+            EngineForward(forward);
         }
         else
         {
             if (engineOn == true)
             {
-                CmdEngineOff();
+                EngineOff();
             }
         }
 
         if (Input.GetButtonDown("Fire1"))
         {
-            CmdFire();
+            Fire();
         }
 
         if (Input.GetButtonDown("Fire2"))
         {
-            CmdHyperspace();
+            Hyperspace();
         }
     }
 }
