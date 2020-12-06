@@ -17,8 +17,6 @@ public class RockSphere : NetworkBehaviour
     public static int count = 0;
 
     // Use this for initialization
-    
-    [Server]
     void Start ()
     {
         // get the current radius from position

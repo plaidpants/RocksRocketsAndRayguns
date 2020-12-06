@@ -24,10 +24,13 @@ using UnityEngine.Networking;
 // laser instead of shots will cut rocks om half instead of break them up in two.
 // need to scale speed (ship and shot and rocks) by radius otherwise the outer layers get really fast
 
+// When disconnecting from the server before leaving all clients generate a hyperspace sound to indicate you are leaving
+
 public class RocketSphere : NetworkBehaviour
 {
     GameObject rocket;
-    [SyncVar] public float radius;
+    [SyncVar] float radius = 10;
+    [SyncVar] bool visible = false;
     public float rotationSpeed;
     public float forwardSpeed;
     public GameObject shotPrefab;
@@ -40,13 +43,25 @@ public class RocketSphere : NetworkBehaviour
     AudioSource engineSound;
     public GameObject explosionPrefab;
     public GameObject spawnPrefab;
-    [SyncVar] bool destroyed = false;
-    [SyncVar] bool engineOn = false;
-    [SyncVar] float engineStartLifetime = 0;
     Rigidbody rb;
-    bool lastEngineOn;
-    float lastRadius;
-    Color RocketColor;
+    [SyncVar(hook = "OnChangeColour")]
+    Color RocketColor = Color.white;
+
+    // Unity makes a clone of the Material every time GetComponent<Renderer>().material is used.
+    // Cache it here and Destroy it in OnDestroy to prevent a memory leak.
+    Material cachedMaterial;
+
+    // create a random color for each player as they are created on the server
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        RocketColor = new Color(Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f));
+    }
+
+    void OnDestroy()
+    {
+        Destroy(cachedMaterial);
+    }
 
     // Use this for initialization
     void Start()
@@ -63,88 +78,141 @@ public class RocketSphere : NetworkBehaviour
         Vector3 pos = Vector3.forward * radius;
         Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
 
-        //rocket = Instantiate(rocketPrefab, pos, rot) as GameObject;
-        //rocket.transform.SetParent(transform);
+        // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
         rocket.transform.position = pos;
         rocket.transform.rotation = rot;
 
+        // find the engine child object
         GameObject engine = transform.Find("Rocket").Find("Engine").gameObject;
         engineParticleSystem = engine.GetComponent<ParticleSystem>();
         emissionModule = engineParticleSystem.emission;
         mainModule = engineParticleSystem.main;
         engineSound = transform.Find("Rocket").transform.GetComponent<AudioSource>();
         hyperspaceSound = transform.GetComponent<AudioSource>();
+
+        // find the rb
         rb = transform.GetComponent<Rigidbody>();
-        //RocketColor = new Color(Random.Range(64, 255), Random.Range(64, 255), Random.Range(64, 255));
-        //GetComponentInChildren<Renderer>().material.SetColor("_Color", Color.red);
+
+        OnChangeColour(RocketColor, RocketColor);
 
         //        PlayerTracker.SetTrackingObject(rocket.gameObject);
         //        Debug.Log("set");
 
+        // Keep the player objects through level changes
         DontDestroyOnLoad(this);
 
+        // attach the PC camera follow script to the local player
         if (isLocalPlayer)
-            Camera.main.GetComponent<CameraFollow360>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
+            Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
+
+        // need to maintain this separately so we can sync state on client connect with existing objects
+        visible = false;
+
+        // spawn the ship
+        Invoke("SpawnShip", 5);
+    }
+
+    void OnChangeColour(Color oldColor, Color newColor)
+    {
+        if (cachedMaterial == null)
+            cachedMaterial = rocket.GetComponent<Renderer>().material;
+
+        cachedMaterial.color = newColor;
+    }
+
+    private void OnLevelWasLoaded(int level)
+    {
+        // attach the PC camera follow script to the local player
+        if (isLocalPlayer)
+            Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
+    }
+
+    [Client]
+    void MySetActive(bool active, Quaternion rotation)
+    {
+        if (active == false)
+        {
+            // stop the ship from moving due to rb momentum
+            rb.isKinematic = true;
+            // set player ship to be stopped
+            rb.velocity = Vector3.zero;
+            rocket.SetActive(false);
+            visible = false;
+        }
+        else
+        {
+            // put initial rotation of new spacecraft at current camera rotation so player can orient spawn position to a safe spot
+            transform.rotation = rotation;
+
+            // restart rb movement
+            rb.isKinematic = false;
+
+            rocket.SetActive(true);
+            visible = true;
+            // play the hyperspace sound on enable
+            hyperspaceSound.Play();
+        }
     }
 
     [ClientRpc]
-    void RpcMySetActive(bool active)
+    void RpcMySetActive(bool active, Quaternion rotation)
     {
-        rocket.SetActive(active);
+        MySetActive(active, rotation);
     }
 
     [Command]
-    void CmdMySetActive(bool active)
+    void CmdMySetActive(bool active, Quaternion rotation)
     {
-        RpcMySetActive(active);
+        RpcMySetActive(active, rotation);
     }
 
     [Command]
     void CmdSpawnShip()
     {
+        RpcSpawnShip();
+    }
+
+    [ClientRpc]
+    void RpcSpawnShip()
+    {
         SpawnShip();
     }
 
+    [Client]
     void SpawnShip()
     {
-        // initial rotation of new spacecraft at current camera rotation so player can orient spawn position to a safe spot
-        transform.rotation = Camera.main.transform.rotation;
-
-        // set player ship to be stopped
-        rb.velocity = Vector3.zero;
-        // restart rb movement
-        rb.isKinematic = false; 
-
-        // re-enable player rocket
-        rocket.SetActive(true);
+        if (!isLocalPlayer) return;
+        
         // re-enable this rocket on all clients through server
-        CmdMySetActive(true);
-
-        // update syncVar indication player rocket state
-        destroyed = false;
+        CmdMySetActive(true, Camera.main.transform.rotation);
     }
 
-
-    [Server]
+    [ClientCallback]
     void OnTriggerEnter(Collider other)
     {
         if (!isLocalPlayer) return;
 
-        if (destroyed == false)
-        {
-            destroyed = true;
-            GameObject explosion = Instantiate(explosionPrefab, rocket.transform.position, Quaternion.identity) as GameObject;
-            NetworkServer.Spawn(explosion);
-            rocket.SetActive(false);
-            CmdMySetActive(false);
-            rb.isKinematic = true; // stop the ship from moving due to rb momentum
+        // Rocket is already destroyed, ignore
+        if (!rocket.activeSelf) return;
 
-            Invoke("SpawnShip", 5);
-        }
+        // Spawn an explosion at player position on all clients
+        GameObject explosion = Instantiate(explosionPrefab, rocket.transform.position, Quaternion.identity) as GameObject;
+        NetworkServer.Spawn(explosion);
+
+        // stop the ship from moving due to rb momentum
+        rb.isKinematic = true;
+        // set player ship to be stopped
+        rb.velocity = Vector3.zero;
+
+        // deactivate the ship on all clients
+        CmdMySetActive(false, Quaternion.identity);
+
+        // spawn a new ship, do this on the local player client and it will re-enable on all clients
+        Invoke("SpawnShip", 5);
     }
-
-    [Server]
+    
+    [Client]
     void Fire()
     {
         Vector3 pos = transform.rotation * Vector3.forward * radius + Vector3.Cross(transform.rotation * Vector3.down, transform.rotation * Vector3.forward);
@@ -159,95 +227,157 @@ public class RocketSphere : NetworkBehaviour
 
         Vector3 torque = Vector3.Cross(transform.rotation * Vector3.right, transform.rotation * Vector3.forward);
         rbshot.AddTorque(torque.normalized * (shotSpeed / radius));
+        //rbshot.velocity = torque.normalized * (shotSpeed / radius);
 
         // need to rotate the shot just in front of the rocket
-        Quaternion turn = Quaternion.Euler(0f, -40f/radius, 0f);
+        Quaternion turn = Quaternion.Euler(0f, -50f/radius, 0f);
         rbshot.MoveRotation(rbshot.rotation * turn);
 
-        NetworkServer.Spawn(shot);
+        // Fire the shot locally do not spawn on server
+        //NetworkServer.Spawn(shot);
     }
 
+    [Client]
     void EngineOn()
     {
-        //emissionModule.enabled = true;
-        engineOn = true;
+        engineSound.pitch = 0.1f;
+        engineSound.volume = 0.1f;
+        mainModule.startLifetime = 0.1f * engineSize;
+        emissionModule.enabled = true;
+        engineSound.Play();
     }
-    
+
+    [ClientRpc]
+    void RpcEngineOn()
+    {
+        EngineOn();
+    }
+
+    [Command]
+    void CmdEngineOn()
+    {
+        RpcEngineOn();
+    }
+
+    [Client]
     void EngineForward(float forward)
     {
         if (forward > 0.1f)
         {
             engineSound.pitch = forward;
             engineSound.volume = forward;
-            engineStartLifetime = forward * engineSize;
-            mainModule.startLifetime = engineStartLifetime;
+            mainModule.startLifetime = forward * engineSize;
         }
         else
         {
             engineSound.pitch = 0.1f;
             engineSound.volume = 0.1f;
-            engineStartLifetime = 0.1f * engineSize;
-            mainModule.startLifetime = engineStartLifetime;
+            mainModule.startLifetime = 0.1f * engineSize;
         }
     }
-    
+
+    [ClientRpc]
+    void RpcEngineForward(float forward)
+    {
+        EngineForward(forward);
+    }
+
+    [Command]
+    void CmdEngineForward(float forward)
+    {
+        RpcEngineForward(forward);
+    }
+
+    [Client]
     void EngineOff()
     {
-        engineSound.volume = 0.0f;
         emissionModule.enabled = false;
-        engineStartLifetime = 0;
-        mainModule.startLifetime = engineStartLifetime;
-        engineOn = false;
+        engineSound.Stop();
+        engineSound.volume = 0.0f;
+        engineSound.pitch = 0.0f;
+        mainModule.startLifetime = 0;
+    }
+
+    [ClientRpc]
+    void RpcEngineOff()
+    {
+        EngineOff();
+    }
+
+    [Command]
+    void CmdEngineOff()
+    {
+        RpcEngineOff();
+    }
+
+    [Command]
+    void CmdUpdateState()
+    {
+        
+    }
+
+    [Client]
+    public override void OnStartClient()
+    {
+        if(!isLocalPlayer)
+            CmdUpdateState();
     }
 
     //??? this would be nice to animate between radius levels
+    [Client]
     void Hyperspace()
     {
         if (rocket.transform.position.magnitude < 15)
         {
-            rocket.transform.position = transform.rotation * Vector3.forward * 30;
             radius = 30;
         }
         else
         {
-            rocket.transform.position = transform.rotation * Vector3.forward * 10;
             radius = 10;
         }
+
+        rocket.transform.position = transform.rotation * Vector3.forward * radius;
+        hyperspaceSound.Play();
     }
 
-    void FixedUpdate()
+    [ClientRpc]
+    void RpcFire()
     {
-        if (engineOn)
+        // create the shot locally on each client and run them independently
+        Fire();
+    }
+
+    [Command]
+    void CmdFire()
+    {
+        RpcFire();
+    }
+
+    [ClientRpc]
+    void RpcHyperspace()
+    {
+        Hyperspace();
+    }
+
+    [Command]
+    void CmdHyperspace()
+    {
+        RpcHyperspace();
+    }
+
+    void Update()
+    {
+        if (rocket.activeSelf != visible)
         {
-            mainModule.startLifetime = engineStartLifetime;
-            emissionModule.enabled = true;
-            if (lastEngineOn != engineOn)
-            {
-                // start playing the engine sound if state has changed
-                engineSound.Play();
-                lastEngineOn = engineOn;
-            }
-        }
-        else
-        {
-            emissionModule.enabled = false;
-            mainModule.startLifetime = 0;
-            if (lastEngineOn != engineOn)
-            {
-                // stop playing the engine sound if state has changed
-                engineSound.Stop();
-                lastEngineOn = engineOn;
-            }
+            // we are out of sync with the server
+            rocket.SetActive(visible);
         }
 
-        if (lastRadius != radius)
-        {
-            // play the hyperspace sound if the radius has changed
-            hyperspaceSound.Play();
-            lastRadius = radius;
-        }
-
+        // only allow input for local player
         if (!isLocalPlayer) return;
+
+        // ignore input while destroyed
+        if (!rocket.activeSelf) return;
 
         float rotation = Input.GetAxis("Horizontal") * rotationSpeed * Time.deltaTime;
 
@@ -260,29 +390,29 @@ public class RocketSphere : NetworkBehaviour
             Vector3 torque = Vector3.Cross(transform.rotation * Vector3.right, transform.rotation * Vector3.forward);
             rb.AddTorque(torque.normalized * (forward * forwardSpeed * Time.deltaTime / radius));
 
-            if (engineOn == false)
+            if (emissionModule.enabled == false)
             {
-                EngineOn();
+                CmdEngineOn();
             }
 
-            EngineForward(forward);
+            CmdEngineForward(forward);
         }
         else
         {
-            if (engineOn == true)
+            if (emissionModule.enabled == true)
             {
-                EngineOff();
+                CmdEngineOff();
             }
         }
 
         if (Input.GetButtonDown("Fire1"))
         {
-            Fire();
+            CmdFire();
         }
 
         if (Input.GetButtonDown("Fire2"))
         {
-            Hyperspace();
+            CmdHyperspace();
         }
     }
 }

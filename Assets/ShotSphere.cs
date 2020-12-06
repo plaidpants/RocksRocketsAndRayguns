@@ -6,11 +6,10 @@ using UnityEngine.Networking;
 
 public class ShotSphere : NetworkBehaviour
 {
-
     public GameObject shotPrefab;
     GameObject shot;
     public GameObject explosionPrefab;
-    [SyncVar] bool destroyed = false;
+    bool destroyed = false;
 
     // Use this for initialization
     void Start()
@@ -39,12 +38,12 @@ public class ShotSphere : NetworkBehaviour
         {
             destroyed = true;
             Destroy(transform.gameObject);
-            //GameObject explosion = Instantiate(explosionPrefab, shot.transform.position, Quaternion.identity) as GameObject;
         }
     }
 
     // Update is called once per frame
-    void Update () {
+    void Update ()
+    {
 		
 	}
 }

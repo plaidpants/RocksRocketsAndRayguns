@@ -24,9 +24,9 @@ public class Levels : NetworkBehaviour
             if (RockSphere.count == 0)
             {
                 level++;
-                if (level > 2)
+                if (level > 3)
                 {
-                    level = 0;
+                    level = 1;
                 }
 
                 SceneManager.LoadScene(level);
