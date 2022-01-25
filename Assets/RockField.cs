@@ -23,6 +23,7 @@ public class RockField : NetworkBehaviour
             Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
 
             GameObject rock = Instantiate(RockSpherePrefab, pos, rot) as GameObject;
+
             NetworkServer.Spawn(rock);
             //rock.transform.SetParent(transform);
         }

@@ -94,7 +94,7 @@ public class RocketSphere : NetworkBehaviour
         // find the rb
         rb = transform.GetComponent<Rigidbody>();
 
-        OnChangeColour(RocketColor, RocketColor);
+        //OnChangeColour(RocketColor, RocketColor);
 
         //        PlayerTracker.SetTrackingObject(rocket.gameObject);
         //        Debug.Log("set");
@@ -109,16 +109,33 @@ public class RocketSphere : NetworkBehaviour
         // need to maintain this separately so we can sync state on client connect with existing objects
         visible = false;
 
-        // spawn the ship
-        Invoke("SpawnShip", 5);
+        // spawn the ship on the server
+        CmdSpawnShip();
     }
 
-    void OnChangeColour(Color oldColor, Color newColor)
+    void ChangeColour()
     {
         if (cachedMaterial == null)
             cachedMaterial = rocket.GetComponent<Renderer>().material;
 
-        cachedMaterial.color = newColor;
+        cachedMaterial.color = RocketColor;
+    }
+
+    void OnChangeColour(Color oldColor, Color newColor)
+    {
+        CmdChangeColour();
+    }
+    
+    [ClientRpc]
+    void RpcChangeColour()
+    {
+        ChangeColour();
+    }
+
+    [Command]
+    void CmdChangeColour()
+    {
+        RpcChangeColour();
     }
 
     private void OnLevelWasLoaded(int level)
@@ -128,7 +145,7 @@ public class RocketSphere : NetworkBehaviour
             Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
     }
 
-    [Client]
+  
     void MySetActive(bool active, Quaternion rotation)
     {
         if (active == false)
@@ -179,19 +196,28 @@ public class RocketSphere : NetworkBehaviour
         SpawnShip();
     }
 
-    [Client]
     void SpawnShip()
     {
         if (!isLocalPlayer) return;
-        
+
+        CmdChangeColour();
+
         // re-enable this rocket on all clients through server
         CmdMySetActive(true, Camera.main.transform.rotation);
     }
 
-    [ClientCallback]
-    void OnTriggerEnter(Collider other)
+    [ClientRpc]
+    void rpcSpawnShipDelay()
     {
         if (!isLocalPlayer) return;
+
+        Invoke("SpawnShip", 5);
+    }
+
+    [ServerCallback]
+    void OnTriggerEnter(Collider other)
+    {
+        //if (!isLocalPlayer) return;
 
         // Rocket is already destroyed, ignore
         if (!rocket.activeSelf) return;
@@ -201,18 +227,21 @@ public class RocketSphere : NetworkBehaviour
         NetworkServer.Spawn(explosion);
 
         // stop the ship from moving due to rb momentum
-        rb.isKinematic = true;
+        //rb.isKinematic = true;
         // set player ship to be stopped
-        rb.velocity = Vector3.zero;
+        //rb.velocity = Vector3.zero;
 
         // deactivate the ship on all clients
-        CmdMySetActive(false, Quaternion.identity);
+        RpcMySetActive(false, Quaternion.identity);
 
         // spawn a new ship, do this on the local player client and it will re-enable on all clients
-        Invoke("SpawnShip", 5);
+        rpcSpawnShipDelay();
+
+        //Invoke("SpawnShip", 5);
     }
-    
-    [Client]
+
+    // we only shoot on the server
+    [Server]
     void Fire()
     {
         Vector3 pos = transform.rotation * Vector3.forward * radius + Vector3.Cross(transform.rotation * Vector3.down, transform.rotation * Vector3.forward);
@@ -234,7 +263,7 @@ public class RocketSphere : NetworkBehaviour
         rbshot.MoveRotation(rbshot.rotation * turn);
 
         // Fire the shot locally do not spawn on server
-        //NetworkServer.Spawn(shot);
+        NetworkServer.Spawn(shot);
     }
 
     [Client]
@@ -304,6 +333,7 @@ public class RocketSphere : NetworkBehaviour
         EngineOff();
     }
 
+    // this is called on the server
     [Command]
     void CmdEngineOff()
     {
@@ -340,25 +370,30 @@ public class RocketSphere : NetworkBehaviour
         hyperspaceSound.Play();
     }
 
+    // this is called on the rocket that fired for all observers
     [ClientRpc]
-    void RpcFire()
+    void RpcOnFire()
     {
         // create the shot locally on each client and run them independently
-        Fire();
+        //Fire();
     }
 
+    // this is called on the server
     [Command]
     void CmdFire()
     {
-        RpcFire();
+        Fire();
+        RpcOnFire();
     }
 
+    // this is called on the rocket that hyperspaced for all observers
     [ClientRpc]
     void RpcHyperspace()
     {
         Hyperspace();
     }
 
+    // this is called on the server
     [Command]
     void CmdHyperspace()
     {

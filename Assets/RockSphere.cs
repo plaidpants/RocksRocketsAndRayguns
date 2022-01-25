@@ -17,7 +17,8 @@ public class RockSphere : NetworkBehaviour
     public static int count = 0;
 
     // Use this for initialization
-    void Start ()
+//    [Server]
+    void Start()
     {
         // get the current radius from position
         float radius = transform.position.magnitude;
@@ -40,11 +41,15 @@ public class RockSphere : NetworkBehaviour
         // make the rock a child of the rock sphere so we can use the ridgid body attached
         //rock.transform.SetParent(transform);
 
-        // apply some rotational torque to the rock sphere object with the rock attached
-        Rigidbody rb = GetComponent<Rigidbody>();
-        Vector3 torque = Random.onUnitSphere * (Random.Range(minSpeed, maxSpeed) / radius);
-        // ???? note this could be pointing right at us or away so no torque would be added need to catch this and get a new torque
-        rb.AddTorque(Vector3.Cross(torque, pos.normalized));
+        // only do this on the server so all the rocks move the same on the clients
+        if (isServer)
+        {
+            // apply some rotational torque to the rock sphere object with the rock attached
+            Rigidbody rb = GetComponent<Rigidbody>();
+            Vector3 torque = Random.onUnitSphere * (Random.Range(minSpeed, maxSpeed) / radius);
+            // ???? note this could be pointing right at us or away so no torque would be added need to catch this and get a new torque
+            rb.AddTorque(Vector3.Cross(torque, pos.normalized));
+        }
 
         count++;
      }
@@ -58,7 +63,7 @@ public class RockSphere : NetworkBehaviour
             NetworkServer.Spawn(explosion);
 
             destroyed = true;
-            Destroy(transform.gameObject);
+            NetworkServer.Destroy(transform.gameObject);
             count--;
 
             if (rockSpherePrefab)

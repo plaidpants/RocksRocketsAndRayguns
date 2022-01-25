@@ -9,6 +9,13 @@ public class CameraFollowRocket : MonoBehaviour
     public Transform player;
     public float rotSpeed;
 
+    private void Start()
+    {
+        // start the camera in a random direction
+        Quaternion rot = Quaternion.LookRotation(Random.onUnitSphere);
+        transform.rotation = rot;
+    }
+
     // this camera repositioning will get overridden with any VR camera update if it is active and tracking
     void LateUpdate()
     {
