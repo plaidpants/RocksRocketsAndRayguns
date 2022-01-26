@@ -32,7 +32,7 @@ public class RockSphere : NetworkBehaviour
         //Vector3 pos = Random.onUnitSphere * radius;
         Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
 
-        // create the rock at that location
+        // move the rock at that location
         //rock = Instantiate(rockPrefab, pos, rot) as GameObject;
         rock = transform.Find("Rock.old").gameObject;
         rock.transform.position = pos;

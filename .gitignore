@@ -7,6 +7,8 @@ Obj/
 obj/
 Debug/
 Build/
+BuildAndroid/
+BuildWindows/
 
 # ===================================== #
 # Visual Studio / MonoDevelop generated #
@@ -52,6 +54,13 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # ASSET STORE
+Assets/XR
+Assets/VolumetricLines
+Assets/Standard Assets
+Assets/SampleScenes
+Assets/Oculus
+Assets/Mirror
+Assets/3Skyboxes
 Assets/Lens Flares
 Assets/Octahedron Sphere
 Assets/Models/Working~
