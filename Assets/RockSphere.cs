@@ -41,7 +41,7 @@ public class RockSphere : NetworkBehaviour
         // make the rock a child of the rock sphere so we can use the ridgid body attached
         //rock.transform.SetParent(transform);
 
-        // only do this on the server so all the rocks move the same on the clients
+        // only do this on the server once so all the rocks move the same on the clients
         if (isServer)
         {
             // apply some rotational torque to the rock sphere object with the rock attached

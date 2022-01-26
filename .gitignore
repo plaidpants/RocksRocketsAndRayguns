@@ -1,0 +1,64 @@
+# =============== #
+# Unity generated #
+# =============== #
+Temp/
+Library/
+Obj/
+obj/
+Debug/
+Build/
+
+# ===================================== #
+# Visual Studio / MonoDevelop generated #
+# ===================================== #
+ExportedObj/
+obj/
+*.svd
+*.userprefs
+/*.csproj
+*.pidb
+*.suo
+/*.sln
+*.user
+*.unityproj
+*.booproj
+.vs/
+*.sdf
+
+# ============ #
+# OS generated #
+# ============ #
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Folder config file
+Desktop.ini
+ 
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# ASSET STORE
+Assets/Lens Flares
+Assets/Octahedron Sphere
+Assets/Models/Working~
+Assets/Editor
+Assets/Standard Assets
+Assets/SimpleParticlePack
+Assets/OVR
+Assets/Draw Call Minimizer
+Assets/VolumetricLines
+Assets/Moon Landscape
