@@ -20,30 +20,33 @@ public class RockSphere : NetworkBehaviour
 //    [Server]
     void Start()
     {
-        // get the current radius from position
-        float radius = transform.position.magnitude;
-        Vector3 pos = transform.position;
-
-        //reset the position back to the center
-        transform.position = Vector3.zero;
-        transform.rotation = Quaternion.identity;
-
-        //calculate random position and rotate so it faces the center
-        //Vector3 pos = Random.onUnitSphere * radius;
-        Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
-
-        // move the rock at that location
-        //rock = Instantiate(rockPrefab, pos, rot) as GameObject;
-        rock = transform.Find("Rock.old").gameObject;
-        rock.transform.position = pos;
-        rock.transform.rotation = rot;
-
-        // make the rock a child of the rock sphere so we can use the ridgid body attached
-        //rock.transform.SetParent(transform);
-
-        // only do this on the server once so all the rocks move the same on the clients
         if (isServer)
         {
+            // get the current radius from position
+            float radius = transform.position.magnitude;
+            Vector3 pos = transform.position;
+
+            //reset the position back to the center
+            transform.position = Vector3.zero;
+            transform.rotation = Quaternion.identity;
+
+            //calculate random position and rotate so it faces the center
+            //Vector3 pos = Random.onUnitSphere * radius;
+            Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
+
+            // move the rock at that location
+            //rock = Instantiate(rockPrefab, pos, rot) as GameObject;
+            rock = transform.Find("Rock.old").gameObject;
+            rock.transform.position = pos;
+            rock.transform.rotation = rot;
+
+            // make the rock a child of the rock sphere so we can use the ridgid body attached
+            //rock.transform.SetParent(transform);
+//        }
+
+        // only do this on the server once so all the rocks move the same on the clients
+//        if (isServer)
+//        {
             // apply some rotational torque to the rock sphere object with the rock attached
             Rigidbody rb = GetComponent<Rigidbody>();
             Vector3 torque = Random.onUnitSphere * (Random.Range(minSpeed, maxSpeed) / radius);
