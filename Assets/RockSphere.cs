@@ -21,10 +21,35 @@ public class RockSphere : NetworkBehaviour
 
     // Use this for initialization
 //    [Server]
+    public override void OnStartServer()
+    {
+        // get the current radius and position from parent gameobject
+        radius = transform.position.magnitude;
+        pos = transform.position;
+
+        // get the current rotation from the parent position
+        rot = Quaternion.FromToRotation(Vector3.forward, pos);
+
+        // reset the parent gameobject position back to the center
+        transform.position = Vector3.zero;
+        transform.rotation = Quaternion.identity;
+
+        // move the child rock to original location and rotation
+        rock = transform.Find("Rock.old").gameObject;
+        rock.transform.position = pos;
+        rock.transform.rotation = rot;
+
+        // apply some rotational torque to the parent gameobject object with the rock attached as a child
+        Rigidbody rb = GetComponent<Rigidbody>();
+        Vector3 torque = Random.onUnitSphere * (Random.Range(minSpeed, maxSpeed) / radius);
+        // ???? note this could be pointing right at us or away so no torque would be added need to catch this and get a new torque
+        rb.AddTorque(Vector3.Cross(torque, pos.normalized));
+    }
+
     void Start()
     {
         // only do the final rock positioning for the rock on the server use syncvars to sync with the clients
-        if (isServer)
+        if (false)//isServer)
         {
             // get the current radius and position from parent gameobject
             radius = transform.position.magnitude;
@@ -87,7 +112,7 @@ public class RockSphere : NetworkBehaviour
     void Update ()
     {
         /*
-        // parent object is in the center
+        // parent object is in the center, probably don't need this, only the second else
         if (transform.position.magnitude == 0)
         {
             // get the child rock
@@ -97,25 +122,23 @@ public class RockSphere : NetworkBehaviour
             if (rock.transform.position.magnitude == 0)
             {
                 // We need to move child out since mirror did not do this for us when the client connected to the server initially
-                rock.transform.position = pos;
-                rock.transform.rotation = rot;
-                Debug.Log("Command1");
+                rock.transform.localPosition = pos;
+                rock.transform.localRotation = rot;
             }
         }
         else
         {
-            // get the child rock
+            // get the child rock, need to do this here because of a difference in order of operation of the Start() call for in game spawn vs client connect spawn
             rock = transform.Find("Rock.old").gameObject;
 
             // is the child rock at the same position as the parent gameobject
             if (rock.transform.position.magnitude == 0)
             {
-                rock.transform.position = pos;
-                rock.transform.rotation = rot;
+                rock.transform.localPosition = pos;
+                rock.transform.localRotation = rot;
             }
         }
         */
-
         //Rigidbody rb = GetComponent<Rigidbody>();
         //Quaternion turn = Quaternion.Euler(0f, 0f, -10);
         //rb.MoveRotation(rb.rotation * turn);
