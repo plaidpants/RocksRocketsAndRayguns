@@ -23,7 +23,7 @@ public class RockSphere : NetworkBehaviour
 //    [Server]
     void Start()
     {
-        // only do this on the server
+        // only do the final rock positioning for the rock on the server use syncvars to sync with the clients
         if (isServer)
         {
             // get the current radius and position from parent gameobject
@@ -42,11 +42,6 @@ public class RockSphere : NetworkBehaviour
             rock.transform.position = pos;
             rock.transform.rotation = rot;
 
-            Debug.Log(pos);
-
-            // make the rock a child of the rock sphere so we can use the ridgid body attached
-            //rock.transform.SetParent(transform);
-
             // apply some rotational torque to the parent gameobject object with the rock attached as a child
             Rigidbody rb = GetComponent<Rigidbody>();
             Vector3 torque = Random.onUnitSphere * (Random.Range(minSpeed, maxSpeed) / radius);
@@ -55,11 +50,13 @@ public class RockSphere : NetworkBehaviour
         }
         else
         {
-            // move the child rock to original location and rotation
+            // move the child rock to original location and rotation from the syncvars since mirror will not do this for us
+            // the rock has moved since creation for clients connecting mid-game, offset is in local coords
             rock = transform.Find("Rock.old").gameObject;
             rock.transform.localPosition = pos;
             rock.transform.localRotation = rot;
         }
+
         count++;
      }
 
