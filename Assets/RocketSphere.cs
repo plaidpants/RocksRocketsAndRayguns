@@ -188,7 +188,9 @@ public class RocketSphere : NetworkBehaviour
     [Command]
     void CmdSpawnShip()
     {
-        RpcSpawnShip();
+	    rpcSpawnShipDelay();
+
+        //RpcSpawnShip();
     }
 
     [ClientRpc]
