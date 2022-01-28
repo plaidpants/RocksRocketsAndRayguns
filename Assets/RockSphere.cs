@@ -57,8 +57,8 @@ public class RockSphere : NetworkBehaviour
         {
             // move the child rock to original location and rotation
             rock = transform.Find("Rock.old").gameObject;
-            rock.transform.position = pos;
-            rock.transform.rotation = rot;
+            rock.transform.localPosition = pos;
+            rock.transform.localRotation = rot;
         }
         count++;
      }
