@@ -102,15 +102,16 @@ public class RocketSphere : NetworkBehaviour
         // Keep the player objects through level changes
         DontDestroyOnLoad(this);
 
+           // need to maintain this separately so we can sync state on client connect with existing objects
+            visible = false;
+ 
         // attach the PC camera follow script to the local player
-        if (isLocalPlayer)
-            Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
+            if (isLocalPlayer)
+                Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
 
-        // need to maintain this separately so we can sync state on client connect with existing objects
-        visible = false;
+            // spawn the ship on the server
+            CmdSpawnShip();
 
-        // spawn the ship on the server
-        CmdSpawnShip();
     }
 
     void ChangeColour()
