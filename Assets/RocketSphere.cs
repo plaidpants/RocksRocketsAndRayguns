@@ -51,16 +51,21 @@ public class RocketSphere : NetworkBehaviour
     // Cache it here and Destroy it in OnDestroy to prevent a memory leak.
     Material cachedMaterial;
 
-    // create a random color for each player as they are created on the server
-    public override void OnStartServer()
-    {
-        base.OnStartServer();
-        RocketColor = new Color(Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f));
-    }
-
     void OnDestroy()
     {
         Destroy(cachedMaterial);
+    }
+
+    public override void OnStartServer()
+    {
+        // call the base function, probably is empty
+        base.OnStartServer();
+
+        // create a random color for each player as they are created on the server
+        RocketColor = new Color(Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f));
+
+        // need to maintain this separately so we can sync state on client connect with existing objects
+        visible = false;
     }
 
     // Use this for initialization
@@ -74,7 +79,7 @@ public class RocketSphere : NetworkBehaviour
         transform.position = Vector3.zero;
         transform.rotation = Quaternion.identity;
 
-        // Move rocket out to radius
+        // Move rocket child gameobject out to radius
         Vector3 pos = Vector3.forward * radius;
         Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
 
@@ -83,7 +88,7 @@ public class RocketSphere : NetworkBehaviour
         rocket.transform.position = pos;
         rocket.transform.rotation = rot;
 
-        // find the engine child object
+        // find the engine child object and attach the particle generator
         GameObject engine = transform.Find("Rocket").Find("Engine").gameObject;
         engineParticleSystem = engine.GetComponent<ParticleSystem>();
         emissionModule = engineParticleSystem.emission;
@@ -91,27 +96,21 @@ public class RocketSphere : NetworkBehaviour
         engineSound = transform.Find("Rocket").transform.GetComponent<AudioSource>();
         hyperspaceSound = transform.GetComponent<AudioSource>();
 
-        // find the rb
+        // find the rb so we can apply torque during the Update()
         rb = transform.GetComponent<Rigidbody>();
-
-        //OnChangeColour(RocketColor, RocketColor);
-
-        //        PlayerTracker.SetTrackingObject(rocket.gameObject);
-        //        Debug.Log("set");
 
         // Keep the player objects through level changes
         DontDestroyOnLoad(this);
 
-           // need to maintain this separately so we can sync state on client connect with existing objects
-            visible = false;
- 
-        // attach the PC camera follow script to the local player
-            if (isLocalPlayer)
-                Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
+        // attach the PC camera follow script to the local player so PC players can play with the VR players
+        if (isLocalPlayer)
+            Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
 
-            // spawn the ship on the server
-            CmdSpawnShip();
+        // update the color to match the color on the server
+        ChangeColour();
 
+        // spawn the ship on the server
+        CmdSpawnShipDelay();
     }
 
     void ChangeColour()
@@ -146,7 +145,6 @@ public class RocketSphere : NetworkBehaviour
             Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
     }
 
-  
     void MySetActive(bool active, Quaternion rotation)
     {
         if (active == false)
@@ -186,26 +184,19 @@ public class RocketSphere : NetworkBehaviour
     }
 
     [Command]
-    void CmdSpawnShip()
+    void CmdSpawnShipDelay()
     {
 	    rpcSpawnShipDelay();
-
-        //RpcSpawnShip();
-    }
-
-    [ClientRpc]
-    void RpcSpawnShip()
-    {
-        SpawnShip();
     }
 
     void SpawnShip()
     {
         if (!isLocalPlayer) return;
 
+        // make sure the color is correct, might not need this
         CmdChangeColour();
 
-        // re-enable this rocket on all clients through server
+        // re-enable this rocket on all clients through server at the direction the user is looking at the moment
         CmdMySetActive(true, Camera.main.transform.rotation);
     }
 
@@ -217,11 +208,10 @@ public class RocketSphere : NetworkBehaviour
         Invoke("SpawnShip", 5);
     }
 
+    // we only process collisions on the server
     [ServerCallback]
     void OnTriggerEnter(Collider other)
     {
-        //if (!isLocalPlayer) return;
-
         // Rocket is already destroyed, ignore
         if (!rocket.activeSelf) return;
 
@@ -239,8 +229,6 @@ public class RocketSphere : NetworkBehaviour
 
         // spawn a new ship, do this on the local player client and it will re-enable on all clients
         rpcSpawnShipDelay();
-
-        //Invoke("SpawnShip", 5);
     }
 
     // we only shoot on the server
@@ -343,19 +331,6 @@ public class RocketSphere : NetworkBehaviour
         RpcEngineOff();
     }
 
-    [Command]
-    void CmdUpdateState()
-    {
-        
-    }
-
-    [Client]
-    public override void OnStartClient()
-    {
-        if(!isLocalPlayer)
-            CmdUpdateState();
-    }
-
     //??? this would be nice to animate between radius levels
     [Client]
     void Hyperspace()
@@ -373,20 +348,11 @@ public class RocketSphere : NetworkBehaviour
         hyperspaceSound.Play();
     }
 
-    // this is called on the rocket that fired for all observers
-    [ClientRpc]
-    void RpcOnFire()
-    {
-        // create the shot locally on each client and run them independently
-        //Fire();
-    }
-
     // this is called on the server
     [Command]
     void CmdFire()
     {
         Fire();
-        RpcOnFire();
     }
 
     // this is called on the rocket that hyperspaced for all observers
@@ -405,6 +371,8 @@ public class RocketSphere : NetworkBehaviour
 
     void Update()
     {
+        //if (!rocket) return;
+
         if (rocket.activeSelf != visible)
         {
             // we are out of sync with the server

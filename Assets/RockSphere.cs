@@ -23,6 +23,9 @@ public class RockSphere : NetworkBehaviour
 //    [Server]
     public override void OnStartServer()
     {
+        // call the base function, probably is empty
+        base.OnStartServer();
+
         // get the current radius and position from parent gameobject
         radius = transform.position.magnitude;
         pos = transform.position;
