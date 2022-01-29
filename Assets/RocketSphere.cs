@@ -30,7 +30,6 @@ public class RocketSphere : NetworkBehaviour
 {
     GameObject rocket;
     [SyncVar] float radius = 10;
-    [SyncVar] bool visible = false;
     public float rotationSpeed;
     public float forwardSpeed;
     public GameObject shotPrefab;
@@ -44,8 +43,7 @@ public class RocketSphere : NetworkBehaviour
     public GameObject explosionPrefab;
     public GameObject spawnPrefab;
     Rigidbody rb;
-    [SyncVar(hook = "OnChangeColour")]
-    Color RocketColor = Color.white;
+    [SyncVar] Color RocketColor = Color.white;
 
     // Unity makes a clone of the Material every time GetComponent<Renderer>().material is used.
     // Cache it here and Destroy it in OnDestroy to prevent a memory leak.
@@ -63,9 +61,6 @@ public class RocketSphere : NetworkBehaviour
 
         // create a random color for each player as they are created on the server
         RocketColor = new Color(Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f));
-
-        // need to maintain this separately so we can sync state on client connect with existing objects
-        visible = false;
     }
 
     // Use this for initialization
@@ -85,6 +80,7 @@ public class RocketSphere : NetworkBehaviour
 
         // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
+
         rocket.transform.position = pos;
         rocket.transform.rotation = rot;
 
@@ -107,35 +103,12 @@ public class RocketSphere : NetworkBehaviour
             Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
 
         // update the color to match the color on the server
-        ChangeColour();
+        if (cachedMaterial == null)
+            cachedMaterial = rocket.GetComponent<Renderer>().material;
+        cachedMaterial.color = RocketColor;
 
         // spawn the ship on the server
         CmdSpawnShipDelay();
-    }
-
-    void ChangeColour()
-    {
-        if (cachedMaterial == null)
-            cachedMaterial = rocket.GetComponent<Renderer>().material;
-
-        cachedMaterial.color = RocketColor;
-    }
-
-    void OnChangeColour(Color oldColor, Color newColor)
-    {
-        CmdChangeColour();
-    }
-    
-    [ClientRpc]
-    void RpcChangeColour()
-    {
-        ChangeColour();
-    }
-
-    [Command]
-    void CmdChangeColour()
-    {
-        RpcChangeColour();
     }
 
     private void OnLevelWasLoaded(int level)
@@ -151,10 +124,12 @@ public class RocketSphere : NetworkBehaviour
         {
             // stop the ship from moving due to rb momentum
             rb.isKinematic = true;
+
             // set player ship to be stopped
             rb.velocity = Vector3.zero;
+
+            // make the rocket invisible
             rocket.SetActive(false);
-            visible = false;
         }
         else
         {
@@ -164,8 +139,9 @@ public class RocketSphere : NetworkBehaviour
             // restart rb movement
             rb.isKinematic = false;
 
+            // make the rocket visible again
             rocket.SetActive(true);
-            visible = true;
+
             // play the hyperspace sound on enable
             hyperspaceSound.Play();
         }
@@ -189,12 +165,10 @@ public class RocketSphere : NetworkBehaviour
 	    rpcSpawnShipDelay();
     }
 
+    [Client]
     void SpawnShip()
     {
         if (!isLocalPlayer) return;
-
-        // make sure the color is correct, might not need this
-        CmdChangeColour();
 
         // re-enable this rocket on all clients through server at the direction the user is looking at the moment
         CmdMySetActive(true, Camera.main.transform.rotation);
@@ -219,11 +193,6 @@ public class RocketSphere : NetworkBehaviour
         GameObject explosion = Instantiate(explosionPrefab, rocket.transform.position, Quaternion.identity) as GameObject;
         NetworkServer.Spawn(explosion);
 
-        // stop the ship from moving due to rb momentum
-        //rb.isKinematic = true;
-        // set player ship to be stopped
-        //rb.velocity = Vector3.zero;
-
         // deactivate the ship on all clients
         RpcMySetActive(false, Quaternion.identity);
 
@@ -247,13 +216,12 @@ public class RocketSphere : NetworkBehaviour
 
         Vector3 torque = Vector3.Cross(transform.rotation * Vector3.right, transform.rotation * Vector3.forward);
         rbshot.AddTorque(torque.normalized * (shotSpeed / radius));
-        //rbshot.velocity = torque.normalized * (shotSpeed / radius);
 
-        // need to rotate the shot just in front of the rocket
+        // need to rotate the shot just in front of the rocket so we don't run into our own shot
         Quaternion turn = Quaternion.Euler(0f, -50f/radius, 0f);
         rbshot.MoveRotation(rbshot.rotation * turn);
 
-        // Fire the shot locally do not spawn on server
+        // Fire the shot on the server by spawning it
         NetworkServer.Spawn(shot);
     }
 
@@ -371,25 +339,19 @@ public class RocketSphere : NetworkBehaviour
 
     void Update()
     {
-        //if (!rocket) return;
-
-        if (rocket.activeSelf != visible)
-        {
-            // we are out of sync with the server
-            rocket.SetActive(visible);
-        }
-
         // only allow input for local player
         if (!isLocalPlayer) return;
 
         // ignore input while destroyed
         if (!rocket.activeSelf) return;
 
+        // left and right rotation is controlled by the horizontal joystick axis
         float rotation = Input.GetAxis("Horizontal") * rotationSpeed * Time.deltaTime;
 
         Quaternion turn = Quaternion.Euler(0f, 0f, -rotation);
         rb.MoveRotation(rb.rotation * turn);
 
+        // forward momentum is controlled by the verticle joystick axis
         float forward = Input.GetAxis("Vertical");
         if (forward > 0)
         {

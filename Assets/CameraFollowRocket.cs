@@ -52,6 +52,7 @@ public class CameraFollowRocket : MonoBehaviour
     // this camera repositioning will get overridden with any VR camera update if it is active and tracking
     void LateUpdate()
     {
+        if (!player) return;
 
         if (player.transform && player.gameObject.activeSelf)
         {
@@ -63,7 +64,7 @@ public class CameraFollowRocket : MonoBehaviour
         {
 #if !UNITY_ANDROID || UNITY_EDITOR
     // Read the mouse input axis
-            rotationX = rotationX + Input.GetAxis("Mouse X") * sensitivityX;
+            rotationX += Input.GetAxis("Mouse X") * sensitivityX;
             rotationY += Input.GetAxis("Mouse Y") * sensitivityY;
 
             rotationX = ClampAngle(rotationX, minimumX, maximumX);
