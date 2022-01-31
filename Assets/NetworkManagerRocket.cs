@@ -34,4 +34,26 @@ public class NetworkManagerRocket : NetworkManager
         if (RockField2 != null)
             NetworkServer.Destroy(RockField2);
     }
+
+    public static int level = 1;
+    public int lastCount = 0;
+
+    void Update()
+    {
+        if (RockSphere.count != lastCount)
+        {
+            lastCount = RockSphere.count;
+            if (RockSphere.count == 0)
+            {
+                level++;
+                if (level > 3)
+                {
+                    level = 1;
+                }
+
+                ServerChangeScene("Game" + level);
+            }
+        }
+    }
+
 }

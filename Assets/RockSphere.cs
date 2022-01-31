@@ -86,7 +86,6 @@ public class RockSphere : NetworkBehaviour
         }
 
         count++;
-        Debug.Log("Add Rocks " + count + " " + Random.Range(0.0f, 1.0f).ToString());
     }
 
     [ServerCallback]
@@ -100,7 +99,6 @@ public class RockSphere : NetworkBehaviour
             destroyed = true;
             NetworkServer.Destroy(transform.gameObject);
             count--;
-            Debug.Log("Destroy Rocks " + count + " " + Random.Range(0.0f, 1.0f).ToString());
 
             if (rockSpherePrefab)
             {

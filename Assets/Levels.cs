@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class Levels : NetworkBehaviour
+public class Levels : NetworkManager
 {
     public static int level = 0;
-    public int lastCount = -1;
-
+    public int lastCount = 0;
+    /*
     // Use this for initialization
     void Start ()
     {
@@ -45,19 +45,19 @@ public class Levels : NetworkBehaviour
     {
         RpcNextLevel();
     }
-
+    */
     // Update is called once per frame
     void Update ()
     {
-        if (RockSphere.count != lastCount)
-        {
-            lastCount = RockSphere.count;
-            Debug.Log("Rocks " + lastCount + " " + Random.Range(0.0f, 1.0f).ToString());
-            if (RockSphere.count == 0)
+            if (RockSphere.count != lastCount)
             {
-                Debug.Log("Rocks " + lastCount);
-                RpcNextLevel();
+                lastCount = RockSphere.count;
+                if (RockSphere.count == 0)
+                {
+                    //ServerChangeScene("Game2");
+                    //    NextLevel();
+                    //RpcNextLevel();
+                }
             }
-        }
     }
 }
