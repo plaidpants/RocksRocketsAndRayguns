@@ -17,6 +17,8 @@ public class Levels : NetworkBehaviour
 
     void NextLevel()
     {
+        Debug.Log("Current level " + level);
+
         lastCount = RockSphere.count;
         if (RockSphere.count == 0)
         {
@@ -26,6 +28,7 @@ public class Levels : NetworkBehaviour
                 level = 1;
             }
 
+            Debug.Log("Next level " + level);
             SceneManager.LoadScene(level);
         }
     }
@@ -33,6 +36,7 @@ public class Levels : NetworkBehaviour
     [ClientRpc]
     void RpcNextLevel()
     {
+        Debug.Log("RpcNextLevel " + level);
         NextLevel();
     }
 
@@ -47,8 +51,11 @@ public class Levels : NetworkBehaviour
     {
         if (RockSphere.count != lastCount)
         {
+            lastCount = RockSphere.count;
+            Debug.Log("Rocks " + lastCount + " " + Random.Range(0.0f, 1.0f).ToString());
             if (RockSphere.count == 0)
             {
+                Debug.Log("Rocks " + lastCount);
                 RpcNextLevel();
             }
         }

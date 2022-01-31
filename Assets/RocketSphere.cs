@@ -41,9 +41,13 @@ public class RocketSphere : NetworkBehaviour
     AudioSource hyperspaceSound;
     AudioSource engineSound;
     public GameObject explosionPrefab;
-    public GameObject spawnPrefab;
     Rigidbody rb;
     [SyncVar] Color RocketColor = Color.white;
+    [SyncVar] float hue = 0.0f;
+    [SyncVar] bool visible = false;
+   // [SyncVar] Vector3 posSave = Vector3.zero;
+   // [SyncVar] Quaternion rotSave = Quaternion.identity;
+    [SyncVar] Quaternion rot2Save = Quaternion.identity;
 
     // Unity makes a clone of the Material every time GetComponent<Renderer>().material is used.
     // Cache it here and Destroy it in OnDestroy to prevent a memory leak.
@@ -60,29 +64,37 @@ public class RocketSphere : NetworkBehaviour
         base.OnStartServer();
 
         // create a random color for each player as they are created on the server
-        RocketColor = new Color(Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f));
+        //RocketColor = new Color(Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f));
+        
+        float hue = Random.Range(0.0f, 1.0f);
+
+        RocketSphere[] players = FindObjectsOfType<RocketSphere>();
+
+        for (int i = 0; i < players.Length; i++)
+        {
+            // check for difference between player and chosen hue,
+            // difference check must be small enough that we have enough colors for all players.
+            // if max player count is increased from 4, this value should be reassessed
+            // this could be an infinte check otherwise, might want a failsafe escape
+            if (Mathf.Abs(hue - players[i].hue) < 0.1f)
+            {
+                // generate a new hue if it is too close to this other players color
+                hue = Random.Range(0.0f, 1.0f);
+
+                // restart check with new hue until we find a hue that is different enough from all the other players.
+                i = 0;
+            }
+        }
+
+        // rocket color is now set for this player until it is destroyed
+        RocketColor = Color.HSVToRGB(hue, 1.0f, 1.0f);
     }
 
     // Use this for initialization
     void Start()
     {
-        // get the current radius from position
-        //float radius = transform.position.magnitude;
-        //Vector3 pos = transform.position;
-
-        //reset the position back to the center
-        transform.position = Vector3.zero;
-        transform.rotation = Quaternion.identity;
-
-        // Move rocket child gameobject out to radius
-        Vector3 pos = Vector3.forward * radius;
-        Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
-
         // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
-
-        rocket.transform.position = pos;
-        rocket.transform.rotation = rot;
 
         // find the engine child object and attach the particle generator
         GameObject engine = transform.Find("Rocket").Find("Engine").gameObject;
@@ -94,6 +106,14 @@ public class RocketSphere : NetworkBehaviour
 
         // find the rb so we can apply torque during the Update()
         rb = transform.GetComponent<Rigidbody>();
+
+        //reset the position back to the center
+        transform.position = Vector3.zero;
+        transform.rotation = Quaternion.identity;
+
+        // Move rocket child gameobject out to radius
+        rocket.transform.position = Vector3.forward * radius;
+        rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position); ;
 
         // Keep the player objects through level changes
         DontDestroyOnLoad(this);
@@ -107,8 +127,20 @@ public class RocketSphere : NetworkBehaviour
             cachedMaterial = rocket.GetComponent<Renderer>().material;
         cachedMaterial.color = RocketColor;
 
-        // spawn the ship on the server
-        CmdSpawnShipDelay();
+        if (isLocalPlayer)
+        {
+            // spawn the ship on the client in the direction the player is currently looking after 5 seconds
+            // which will enable the ship and then enable it on the other player clients through the server
+            Invoke("SpawnShip", 5);
+        }
+        else
+        {
+            // not our rocket so we need to update the state based on the server sync var state
+            rocket.SetActive(visible);
+            //rocket.transform.position = posSave;
+            //rocket.transform.rotation = rotSave;
+            transform.rotation = rot2Save;
+        }
     }
 
     private void OnLevelWasLoaded(int level)
@@ -130,17 +162,21 @@ public class RocketSphere : NetworkBehaviour
 
             // make the rocket invisible
             rocket.SetActive(false);
+            visible = false;
         }
         else
         {
-            // put initial rotation of new spacecraft at current camera rotation so player can orient spawn position to a safe spot
+            // put initial rotation of new spacecraft at current camera rotation so player can orient spawn position to a safe spot,
+            // save it so new players know where to create the ship, if the player doesn't move
             transform.rotation = rotation;
+            rot2Save = rotation;
 
             // restart rb movement
             rb.isKinematic = false;
 
             // make the rocket visible again
             rocket.SetActive(true);
+            visible = true;
 
             // play the hyperspace sound on enable
             hyperspaceSound.Play();
@@ -157,12 +193,6 @@ public class RocketSphere : NetworkBehaviour
     void CmdMySetActive(bool active, Quaternion rotation)
     {
         RpcMySetActive(active, rotation);
-    }
-
-    [Command]
-    void CmdSpawnShipDelay()
-    {
-	    rpcSpawnShipDelay();
     }
 
     [Client]
@@ -339,6 +369,12 @@ public class RocketSphere : NetworkBehaviour
 
     void Update()
     {
+        // make sure the state matches the server state
+        if (visible != rocket.activeSelf)
+        {
+            rocket.SetActive(visible);
+        }
+
         // only allow input for local player
         if (!isLocalPlayer) return;
 
@@ -382,5 +418,11 @@ public class RocketSphere : NetworkBehaviour
         {
             CmdHyperspace();
         }
+
+        if (Input.GetButtonDown("Submit"))
+        {
+
+        }
+
     }
 }
