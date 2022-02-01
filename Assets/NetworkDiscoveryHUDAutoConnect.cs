@@ -15,6 +15,8 @@ namespace Mirror.Discovery
 
         public NetworkDiscovery networkDiscovery;
 
+        bool triedConnect = false;
+
         void tryConnect()
         {
             // try all found servers
@@ -33,14 +35,17 @@ namespace Mirror.Discovery
                 NetworkManager.singleton.StartHost();
                 networkDiscovery.AdvertiseServer();
             }
+
+            // flag that we tried
+            triedConnect = true;
         }
 
         void Start()
         {
             discoveredServers.Clear();
             networkDiscovery.StartDiscovery();
-            // wait 5 seconds before trying to connect so we find any servers out there already
-            Invoke("tryConnect", 5);
+            // wait 2 + random seconds before trying to connect so we find any servers out there already
+            Invoke("tryConnect", 2 + (int)UnityEngine.Random.Range(0,4));
         }
 
 #if UNITY_EDITOR
@@ -55,6 +60,16 @@ namespace Mirror.Discovery
         }
 #endif
 
+        void Update()
+        {
+            // after we tried to connect, if we lose the connection, shutdown the app and allow the user to restart it.
+            if (triedConnect && !NetworkClient.isConnected && !NetworkServer.active && !NetworkClient.active)
+            {
+                // lost the connection, need to restart the app
+                Application.Quit();
+            }
+        }
+
         void OnGUI()
         {
             if (NetworkManager.singleton == null)
@@ -64,7 +79,8 @@ namespace Mirror.Discovery
                 return;
 
             if (!NetworkClient.isConnected && !NetworkServer.active && !NetworkClient.active)
-                DrawGUI();
+                return;
+                //DrawGUI();
         }
 
         void DrawGUI()

@@ -45,8 +45,6 @@ public class RocketSphere : NetworkBehaviour
     [SyncVar] Color RocketColor = Color.white;
     [SyncVar] float hue = 0.0f;
     [SyncVar] bool visible = false;
-   // [SyncVar] Vector3 posSave = Vector3.zero;
-   // [SyncVar] Quaternion rotSave = Quaternion.identity;
     [SyncVar] Quaternion rot2Save = Quaternion.identity;
 
     // Unity makes a clone of the Material every time GetComponent<Renderer>().material is used.
@@ -60,7 +58,7 @@ public class RocketSphere : NetworkBehaviour
 
     public override void OnStartServer()
     {
-        // call the base function, probably is empty
+        // call the base function, important, odd behavior when connecting when not on same start scene
         base.OnStartServer();
 
         // create a random color for each player as they are created on the server
@@ -71,10 +69,10 @@ public class RocketSphere : NetworkBehaviour
         RocketSphere[] players = FindObjectsOfType<RocketSphere>();
 
         int count = 0;
-        for (int i = 1; i < players.Length; i++)
+        for (int i = 0; i < players.Length; i++)
         {
             count++;
-            if (count > 10)
+            if (count > 30)
             {
                 Debug.Log("Give up finding a better color");
                 break; // give up
@@ -84,7 +82,7 @@ public class RocketSphere : NetworkBehaviour
             // difference check must be small enough that we have enough colors for all players.
             // if max player count is increased from 4, this value should be reassessed
             // this could be an infinte check otherwise, might want a failsafe escape
-            if ((Mathf.Abs(hue - players[i].hue) < 0.15f) && (players[i] != this))
+            if ((Mathf.Abs(hue - players[i].hue) < 0.2f) && (players[i] != this))
             {
                 // generate a new hue if it is too close to this other players color
                 hue = Random.Range(0.0f, 1.0f);
@@ -96,11 +94,30 @@ public class RocketSphere : NetworkBehaviour
 
         // rocket color is now set for this player until it is destroyed or disconnects
         RocketColor = Color.HSVToRGB(hue, 1.0f, 1.0f);
+
+        // Find the rocket child object
+        rocket = transform.Find("Rocket").gameObject;
+
+        //reset the position back to the center
+        transform.position = Vector3.zero;
+        transform.rotation = Quaternion.identity;
+
+        // Move rocket child gameobject out to radius
+        rocket.transform.position = Vector3.forward * radius;
+        rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
     }
 
     // Use this for initialization
     void Start()
     {
+ 
+    }
+
+    public override void OnStartClient()
+    {
+        // call the base function, important, odd behavior when connecting when not on same start scene
+        base.OnStartClient();
+
         // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
 
@@ -121,7 +138,7 @@ public class RocketSphere : NetworkBehaviour
 
         // Move rocket child gameobject out to radius
         rocket.transform.position = Vector3.forward * radius;
-        rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position); ;
+        rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
 
         // Keep the player objects through level changes
         DontDestroyOnLoad(this);
@@ -145,8 +162,6 @@ public class RocketSphere : NetworkBehaviour
         {
             // not our rocket so we need to update the state based on the server sync var state
             rocket.SetActive(visible);
-            //rocket.transform.position = posSave;
-            //rocket.transform.rotation = rotSave;
             transform.rotation = rot2Save;
         }
     }
