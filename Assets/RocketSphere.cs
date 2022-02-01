@@ -70,13 +70,21 @@ public class RocketSphere : NetworkBehaviour
 
         RocketSphere[] players = FindObjectsOfType<RocketSphere>();
 
-        for (int i = 0; i < players.Length; i++)
+        int count = 0;
+        for (int i = 1; i < players.Length; i++)
         {
+            count++;
+            if (count > 10)
+            {
+                Debug.Log("Give up finding a better color");
+                break; // give up
+            }
+
             // check for difference between player and chosen hue,
             // difference check must be small enough that we have enough colors for all players.
             // if max player count is increased from 4, this value should be reassessed
             // this could be an infinte check otherwise, might want a failsafe escape
-            if (Mathf.Abs(hue - players[i].hue) < 0.1f)
+            if ((Mathf.Abs(hue - players[i].hue) < 0.15f) && (players[i] != this))
             {
                 // generate a new hue if it is too close to this other players color
                 hue = Random.Range(0.0f, 1.0f);
@@ -86,7 +94,7 @@ public class RocketSphere : NetworkBehaviour
             }
         }
 
-        // rocket color is now set for this player until it is destroyed
+        // rocket color is now set for this player until it is destroyed or disconnects
         RocketColor = Color.HSVToRGB(hue, 1.0f, 1.0f);
     }
 
@@ -150,7 +158,7 @@ public class RocketSphere : NetworkBehaviour
             Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
     }
 
-    void MySetActive(bool active, Quaternion rotation)
+    void MySetActive(bool active, Quaternion rotation, bool playhyperspace)
     {
         if (active == false)
         {
@@ -178,21 +186,25 @@ public class RocketSphere : NetworkBehaviour
             rocket.SetActive(true);
             visible = true;
 
-            // play the hyperspace sound on enable
+        }
+
+        if (playhyperspace == true)
+        {
+            // play the hyperspace sound
             hyperspaceSound.Play();
         }
     }
 
     [ClientRpc]
-    void RpcMySetActive(bool active, Quaternion rotation)
+    public void RpcMySetActive(bool active, Quaternion rotation, bool playhyperspace)
     {
-        MySetActive(active, rotation);
+        MySetActive(active, rotation, playhyperspace);
     }
 
     [Command]
-    void CmdMySetActive(bool active, Quaternion rotation)
+    void CmdMySetActive(bool active, Quaternion rotation, bool playhyperspace)
     {
-        RpcMySetActive(active, rotation);
+        RpcMySetActive(active, rotation, playhyperspace);
     }
 
     [Client]
@@ -201,14 +213,18 @@ public class RocketSphere : NetworkBehaviour
         if (!isLocalPlayer) return;
 
         // re-enable this rocket on all clients through server at the direction the user is looking at the moment
-        CmdMySetActive(true, Camera.main.transform.rotation);
+        CmdMySetActive(true, Camera.main.transform.rotation, true);
+        isSpawning = false;
     }
 
+    bool isSpawning;
+
     [ClientRpc]
-    void rpcSpawnShipDelay()
+    public void rpcSpawnShipDelay()
     {
         if (!isLocalPlayer) return;
 
+        isSpawning = true;
         Invoke("SpawnShip", 5);
     }
 
@@ -224,7 +240,7 @@ public class RocketSphere : NetworkBehaviour
         NetworkServer.Spawn(explosion);
 
         // deactivate the ship on all clients
-        RpcMySetActive(false, Quaternion.identity);
+        RpcMySetActive(false, Quaternion.identity, false);
 
         // spawn a new ship, do this on the local player client and it will re-enable on all clients
         rpcSpawnShipDelay();

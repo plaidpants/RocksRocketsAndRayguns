@@ -12,31 +12,39 @@ public class NetworkManagerRocket : NetworkManager
 
     private void OnLevelWasLoaded(int level)
     {
-        RockField1 = Instantiate(spawnPrefabs.Find(prefab => prefab.name == "RockField1"));
-        RockField2 = Instantiate(spawnPrefabs.Find(prefab => prefab.name == "RockField2"));
-        NetworkServer.Spawn(RockField1);
-        NetworkServer.Spawn(RockField2);
     }
 
     public override void OnStartHost()
     {
-        RockField1 = Instantiate(spawnPrefabs.Find(prefab => prefab.name == "RockField1"));
-        RockField2 = Instantiate(spawnPrefabs.Find(prefab => prefab.name == "RockField2"));
-        NetworkServer.Spawn(RockField1);
-        NetworkServer.Spawn(RockField2);
     }
 
     public override void OnStopHost()
     {
-        // destroy Rockfield
-        if (RockField1 != null)
-            NetworkServer.Destroy(RockField1);
-        if (RockField2 != null)
-            NetworkServer.Destroy(RockField2);
     }
 
     public static int level = 1;
     public int lastCount = 0;
+
+    static bool preparing = false;
+
+    void SwitchScenes()
+    {
+        RocketSphere[] players = FindObjectsOfType<RocketSphere>();
+
+        for (int i = 0; i < players.Length; i++)
+        {
+            // deactivate all the ships on all clients
+            players[i].RpcMySetActive(false, Quaternion.identity, true);
+
+            // spawn ships, on all clients
+            players[i].rpcSpawnShipDelay();
+        }
+
+        // switch to the next level
+        ServerChangeScene("Game" + level);
+
+        preparing = false;
+    }
 
     void Update()
     {
@@ -51,9 +59,19 @@ public class NetworkManagerRocket : NetworkManager
                     level = 1;
                 }
 
-                ServerChangeScene("Game" + level);
+                preparing = true;
+
+                // stop the music at the end of the level
+                Camera.main.transform.gameObject.GetComponent<AudioSource>().Stop();
+
+                // wait 10 seconds before switching to the next level
+                Invoke("SwitchScenes", 10);
             }
         }
-    }
 
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
+    }
 }
