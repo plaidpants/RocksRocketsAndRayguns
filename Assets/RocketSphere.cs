@@ -40,7 +40,7 @@ public class RocketSphere : NetworkBehaviour
     public GameObject explosionPrefab;
     Rigidbody rb;
     [SyncVar] Color RocketColor = Color.white;
-    [SyncVar] float hue = 2.0f;
+    float hue = 2.0f;
     [SyncVar] bool visible = false;
     [SyncVar] Quaternion rot2Save = Quaternion.identity;
 
@@ -72,7 +72,9 @@ public class RocketSphere : NetworkBehaviour
             int count = 0;
             for (int i = 0; i < players.Length; i++)
             {
-                Debug.Log("Player " + i + " hue " + players[i].hue);
+                float otherplayerhue = players[i].hue;
+
+                Debug.Log("Other Player " + i + " hue " + otherplayerhue);
 
                 if (players[i] == this)
                 {
@@ -90,12 +92,19 @@ public class RocketSphere : NetworkBehaviour
                 // difference check must be small enough that we have enough colors for all players.
                 // if max player count is increased from 4, this value should be reassessed
                 // this could be an infinte check otherwise, might want a failsafe escape
-                if (    (Mathf.Abs(hue - players[i].hue) < 0.2f) && 
-                        (Mathf.Abs(hue - players[i].hue + 1.0f) < 0.2f) && 
-                        (Mathf.Abs(hue - players[i].hue - 1.0f) < 0.2f) && 
+
+                Debug.Log("diffs " + 
+                    Mathf.Abs(hue - otherplayerhue) + " " + 
+                    Mathf.Abs(hue - otherplayerhue + 1.0f) + " " + 
+                    Mathf.Abs(hue - otherplayerhue - 1.0f));
+                const float colorhuediffmax = 0.10f;
+
+                if (    ((Mathf.Abs(hue - otherplayerhue) < colorhuediffmax) || 
+                        (Mathf.Abs(hue - otherplayerhue + 1.0f) < colorhuediffmax) || 
+                        (Mathf.Abs(hue - otherplayerhue - 1.0f) < colorhuediffmax)) && 
                         (players[i] != this))
                 {
-                    Debug.Log("Player " + i + " hue " + players[i].hue + " too close " + hue);
+                    Debug.Log("Player " + i + " hue " + players[i].hue + " too close to hue " + hue);
 
                     // generate a new hue if it is too close to this other players color
                     hue = Random.Range(0.0f, 1.0f);
