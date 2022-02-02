@@ -40,7 +40,7 @@ public class RocketSphere : NetworkBehaviour
     public GameObject explosionPrefab;
     Rigidbody rb;
     [SyncVar] Color RocketColor = Color.white;
-    [SyncVar] float hue = 0.0f;
+    [SyncVar] float hue = 2.0f;
     [SyncVar] bool visible = false;
     [SyncVar] Quaternion rot2Save = Quaternion.identity;
 
@@ -61,36 +61,62 @@ public class RocketSphere : NetworkBehaviour
         // create a random color for each player as they are created on the server
         //RocketColor = new Color(Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f));
         
-        float hue = Random.Range(0.0f, 1.0f);
-
-        RocketSphere[] players = FindObjectsOfType<RocketSphere>();
-
-        int count = 0;
-        for (int i = 0; i < players.Length; i++)
+         // only use a colored ship if we are not the host so we can see who the host is and avoid shutdown of the host
+        if (!isLocalPlayer)
         {
-            count++;
-            if (count > 30)
+            hue = Random.Range(0.0f, 1.0f);
+            Debug.Log("player check hue " + hue);
+
+            RocketSphere[] players = FindObjectsOfType<RocketSphere>();
+
+            int count = 0;
+            for (int i = 0; i < players.Length; i++)
             {
-                Debug.Log("Give up finding a better color");
-                break; // give up
+                Debug.Log("Player " + i + " hue " + players[i].hue);
+
+                if (players[i] == this)
+                {
+                    Debug.Log("this player " + i + " skip");
+                    continue;
+                }
+                count++;
+                if (count > 30)
+                {
+                    Debug.Log("Give up finding a better color");
+                    break; // give up
+                }
+
+                // check for difference between player and chosen hue,
+                // difference check must be small enough that we have enough colors for all players.
+                // if max player count is increased from 4, this value should be reassessed
+                // this could be an infinte check otherwise, might want a failsafe escape
+                if (    (Mathf.Abs(hue - players[i].hue) < 0.2f) && 
+                        (Mathf.Abs(hue - players[i].hue + 1.0f) < 0.2f) && 
+                        (Mathf.Abs(hue - players[i].hue - 1.0f) < 0.2f) && 
+                        (players[i] != this))
+                {
+                    Debug.Log("Player " + i + " hue " + players[i].hue + " too close " + hue);
+
+                    // generate a new hue if it is too close to this other players color
+                    hue = Random.Range(0.0f, 1.0f);
+
+                    Debug.Log("try new hue " + hue);
+
+                    // restart check with new hue until we find a hue that is different enough from all the other players.
+                    i = 0;
+                }
             }
 
-            // check for difference between player and chosen hue,
-            // difference check must be small enough that we have enough colors for all players.
-            // if max player count is increased from 4, this value should be reassessed
-            // this could be an infinte check otherwise, might want a failsafe escape
-            if ((Mathf.Abs(hue - players[i].hue) < 0.2f) && (players[i] != this))
-            {
-                // generate a new hue if it is too close to this other players color
-                hue = Random.Range(0.0f, 1.0f);
-
-                // restart check with new hue until we find a hue that is different enough from all the other players.
-                i = 0;
-            }
+            // rocket color is now set for this player until it is destroyed or disconnects
+            RocketColor = Color.HSVToRGB(hue, 1.0f, 1.0f);
+            Debug.Log("player assigned hue " + hue);
+        } 
+        else
+        {
+            // server color is always white
+            RocketColor = Color.white;
+            hue = -2.0f;
         }
-
-        // rocket color is now set for this player until it is destroyed or disconnects
-        RocketColor = Color.HSVToRGB(hue, 1.0f, 1.0f);
 
         // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
@@ -147,16 +173,10 @@ public class RocketSphere : NetworkBehaviour
         if (isLocalPlayer)
             Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
 
-        // should always be at least one network manager active
-        NetworkManager [] nm = FindObjectsOfType<NetworkManager>();
-        // only use a colored ship if we are not the host so we can see who the host is and avoid shutdown of the host
-        if (nm[0].mode != NetworkManagerMode.Host)
-        {
-            // update the color to match the color on the server
-            if (cachedMaterial == null)
-                cachedMaterial = rocket.GetComponent<Renderer>().material;
-            cachedMaterial.color = RocketColor;
-        }
+        // update the color to match the color on the server
+        if (cachedMaterial == null)
+            cachedMaterial = rocket.GetComponent<Renderer>().material;
+        cachedMaterial.color = RocketColor;
 
         if (isLocalPlayer)
         {
@@ -416,6 +436,10 @@ public class RocketSphere : NetworkBehaviour
 
     void Update()
     {
+        // check if client start has been called yet
+        if (!rocket)
+            return;
+
         // make sure the state matches the server state
         if (visible != rocket.activeSelf)
         {
