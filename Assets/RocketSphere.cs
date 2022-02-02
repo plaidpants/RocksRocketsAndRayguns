@@ -7,7 +7,6 @@ using UnityEngine.Networking;
 //ideas
 // fixed wormhole between two depth levels
 // hyperspace between two depth levels
-// multi-player
 // shield, use physics to bounce off rocks and other ships
 // UFO
 // radar circle indicating rocks, UFOs, enemy rockets around
@@ -15,6 +14,7 @@ using UnityEngine.Networking;
 // make front transparent when in background
 // bright light shots with lens flare
 // readjust center point if head moves too far away from center
+// add fade in and out of levels
 
 //rockets, rocks and ray-guns
 // stick man astronauts
@@ -23,8 +23,6 @@ using UnityEngine.Networking;
 
 // laser instead of shots will cut rocks om half instead of break them up in two.
 // need to scale speed (ship and shot and rocks) by radius otherwise the outer layers get really fast
-
-// When disconnecting from the server before leaving all clients generate a hyperspace sound to indicate you are leaving
 
 public class RocketSphere : NetworkBehaviour
 {
@@ -55,7 +53,7 @@ public class RocketSphere : NetworkBehaviour
     {
         Destroy(cachedMaterial);
     }
-
+    
     public override void OnStartServer()
     {
         // call the base function, important, odd behavior when connecting when not on same start scene
@@ -110,7 +108,10 @@ public class RocketSphere : NetworkBehaviour
     // Use this for initialization
     void Start()
     {
- 
+        // mirror does not garentee that start functions will be called in the same order on the server and client and when a client connects
+        // if (isServer) and if (isClient) are not sufficient controls
+        // move all start functions to OnStartClient() or OnStartServer(),
+        // be sure to call the base function or you will not get proper function when switching scenes and connecting
     }
 
     public override void OnStartClient()
@@ -211,6 +212,13 @@ public class RocketSphere : NetworkBehaviour
     }
 
     [ClientRpc]
+    public void RpcStopMusic()
+    {
+        // stop the music at the end of the level
+        Camera.main.transform.gameObject.GetComponent<AudioSource>().Stop();
+    }
+
+    [ClientRpc]
     public void RpcMySetActive(bool active, Quaternion rotation, bool playhyperspace)
     {
         MySetActive(active, rotation, playhyperspace);
@@ -262,6 +270,9 @@ public class RocketSphere : NetworkBehaviour
     }
 
     // we only shoot on the server
+    // clients control rockets but server controls shots,
+    // there is a bit of a delay difference and can result in client player rockets running into their own shots at high speed
+    // need to find a solution to this issue, moving the shot out further is not pretty
     [Server]
     void Fire()
     {
@@ -454,6 +465,5 @@ public class RocketSphere : NetworkBehaviour
         {
 
         }
-
     }
 }

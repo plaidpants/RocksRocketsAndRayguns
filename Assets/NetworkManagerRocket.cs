@@ -43,6 +43,17 @@ public class NetworkManagerRocket : NetworkManager
         preparing = false;
     }
 
+    void StopMusic()
+    {
+        RocketSphere[] players = FindObjectsOfType<RocketSphere>();
+
+        for (int i = 0; i < players.Length; i++)
+        {
+            // deactivate music all the ships on all clients
+            players[i].RpcStopMusic();
+        }
+    }
+
     void Update()
     {
         if (RockSphere.count != lastCount)
@@ -58,8 +69,7 @@ public class NetworkManagerRocket : NetworkManager
 
                 preparing = true;
 
-                // stop the music at the end of the level
-                Camera.main.transform.gameObject.GetComponent<AudioSource>().Stop();
+                StopMusic();
 
                 // wait 10 seconds before switching to the next level
                 Invoke("SwitchScenes", 10);
