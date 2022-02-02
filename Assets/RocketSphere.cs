@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 
 //ideas
 // fixed wormhole between two depth levels
@@ -108,7 +107,7 @@ public class RocketSphere : NetworkBehaviour
     // Use this for initialization
     void Start()
     {
-        // mirror does not garentee that start functions will be called in the same order on the server and client and when a client connects
+        // mirror does not garantee that start functions will be called in the same order on the server and client and when a client connects
         // if (isServer) and if (isClient) are not sufficient controls
         // move all start functions to OnStartClient() or OnStartServer(),
         // be sure to call the base function or you will not get proper function when switching scenes and connecting
@@ -148,10 +147,16 @@ public class RocketSphere : NetworkBehaviour
         if (isLocalPlayer)
             Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
 
-        // update the color to match the color on the server
-        if (cachedMaterial == null)
-            cachedMaterial = rocket.GetComponent<Renderer>().material;
-        cachedMaterial.color = RocketColor;
+        // should always be at least one network manager active
+        NetworkManager [] nm = FindObjectsOfType<NetworkManager>();
+        // only use a colored ship if we are not the host so we can see who the host is and avoid shutdown of the host
+        if (nm[0].mode != NetworkManagerMode.Host)
+        {
+            // update the color to match the color on the server
+            if (cachedMaterial == null)
+                cachedMaterial = rocket.GetComponent<Renderer>().material;
+            cachedMaterial.color = RocketColor;
+        }
 
         if (isLocalPlayer)
         {
