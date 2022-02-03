@@ -13,14 +13,13 @@ public class RockSphere : NetworkBehaviour
     public GameObject rockSpherePrefab;
     public int pieces;
     //public float rotationSpeed;
-    [SyncVar] bool destroyed = false;
-    [SyncVar] float radius = 0;
-    [SyncVar] Vector3 pos = Vector3.zero;
-    [SyncVar] Quaternion rot = Quaternion.identity;
+    [SyncVar] public bool destroyed = false;
+    [SyncVar] public float radius = 0;
+    [SyncVar] public Vector3 pos = Vector3.zero;
+    [SyncVar] public Quaternion rot = Quaternion.identity;
     public static int count = 0;
 
     // Use this for initialization
-//    [Server]
     public override void OnStartServer()
     {
         // call the base function, probably is empty
@@ -41,8 +40,8 @@ public class RockSphere : NetworkBehaviour
 
         // move the child rock to original location and rotation
         rock = transform.Find("Rock.old").gameObject;
-        rock.transform.position = pos;
-        rock.transform.rotation = rot;
+        rock.transform.localPosition = pos;
+        rock.transform.localRotation = rot;
 
         // apply some rotational torque to the parent gameobject object with the rock attached as a child
         Rigidbody rb = GetComponent<Rigidbody>();

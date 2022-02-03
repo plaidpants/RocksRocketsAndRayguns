@@ -11,10 +11,9 @@ public class RockField : NetworkBehaviour
     public GameObject RockSpherePrefab;
 
 	// Use this for initialization
-    [Server]
-	void Start ()
+    public override void OnStartServer()
     {
-        //if (!isServer) return;
+        base.OnStartServer();
 
         for (int i = 0; i < numberOfRocks; i++)
         {
@@ -29,8 +28,13 @@ public class RockField : NetworkBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update ()
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+    }
+
+        // Update is called once per frame
+        void Update ()
     {
 	}
 }
