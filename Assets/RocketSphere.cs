@@ -40,7 +40,7 @@ public class RocketSphere : NetworkBehaviour
     public GameObject explosionPrefab;
     Rigidbody rb;
     [SyncVar] Color RocketColor = Color.white;
-    float hue = 2.0f;
+    public float hue = 2.0f;
     [SyncVar] bool visible = false;
     [SyncVar] Quaternion rot2Save = Quaternion.identity;
 
@@ -292,6 +292,17 @@ public class RocketSphere : NetworkBehaviour
         // Rocket is already destroyed, ignore
         if (!rocket.activeSelf) return;
 
+        ShotSphere shot = other.attachedRigidbody.GetComponent<ShotSphere>();
+
+        if (shot)
+        {
+            if (shot.playershooterhue == hue)
+            {
+                // ignore our own shots
+                return;
+            }
+        }
+
         // Spawn an explosion at player position on all clients
         GameObject explosion = Instantiate(explosionPrefab, rocket.transform.position, Quaternion.identity) as GameObject;
         NetworkServer.Spawn(explosion);
@@ -315,8 +326,11 @@ public class RocketSphere : NetworkBehaviour
 
         GameObject shot = Instantiate(shotPrefab, pos, rot) as GameObject;
 
-        shot.transform.rotation = transform.rotation;
+        // save the hue of the shooter in the shot so we won't collide with it later
+        shot.GetComponent<ShotSphere>().playershooterhue = hue;
 
+        shot.transform.rotation = transform.rotation;
+        
         Rigidbody rbshot = shot.GetComponent<Rigidbody>();
         rbshot.angularVelocity = rb.angularVelocity;
 

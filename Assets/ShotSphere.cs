@@ -9,6 +9,7 @@ public class ShotSphere : NetworkBehaviour
     public GameObject shotPrefab;
     GameObject shot;
     public GameObject explosionPrefab;
+    public float playershooterhue = -10.0f;
     bool destroyed = false;
 
     public override void OnStartServer()
@@ -42,6 +43,17 @@ public class ShotSphere : NetworkBehaviour
     [ServerCallback]
     void OnTriggerEnter(Collider other)
     {
+        RocketSphere rocket = other.attachedRigidbody.GetComponent<RocketSphere>();
+
+        if (rocket)
+        {
+            if (rocket.hue == playershooterhue)
+            {
+                // ignore our own shots
+                return;
+            }
+        }
+
         if (destroyed == false)
         {
             destroyed = true;
