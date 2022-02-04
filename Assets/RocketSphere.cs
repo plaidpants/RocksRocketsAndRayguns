@@ -14,6 +14,7 @@ using UnityEngine;
 // bright light shots with lens flare
 // readjust center point if head moves too far away from center
 // add fade in and out of levels
+// shots same color as ships
 
 //rockets, rocks and ray-guns
 // stick man astronauts
@@ -37,6 +38,9 @@ public class RocketSphere : NetworkBehaviour
     ParticleSystem engineParticleSystem;
     AudioSource hyperspaceSound;
     AudioSource engineSound;
+
+    AudioSource [] musicLoops;
+
     public GameObject explosionPrefab;
     Rigidbody rb;
     [SyncVar] Color RocketColor = Color.white;

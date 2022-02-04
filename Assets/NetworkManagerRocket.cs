@@ -40,6 +40,8 @@ public class NetworkManagerRocket : NetworkManager
         // switch to the next level
         ServerChangeScene("Game" + level);
 
+        RockSphere.ResetRockStats();
+
         preparing = false;
     }
 
@@ -54,26 +56,38 @@ public class NetworkManagerRocket : NetworkManager
         }
     }
 
+    void NextLevel()
+    {
+        level++;
+        if (level > 6)
+        {
+            level = 1;
+        }
+
+        preparing = true;
+
+        StopMusic();
+
+        // wait for outro music + last music loop + 5 seconds before switching to the next level
+        Invoke("SwitchScenes", Camera.main.transform.gameObject.GetComponent<MusicHandler>().outroMusicClip.length + 
+            Camera.main.transform.gameObject.GetComponent<MusicHandler>().musicClipLoops[Camera.main.transform.gameObject.GetComponent<MusicHandler>().musicClipLoops.Length - 1].length 
+            + 5);
+    }
+
     void Update()
     {
-        if (RockSphere.count != lastCount)
+        if (RockSphere.currentRocks != lastCount)
         {
-            lastCount = RockSphere.count;
-            if (RockSphere.count == 0)
+            lastCount = RockSphere.currentRocks;
+            if (RockSphere.currentRocks == 0)
             {
-                level++;
-                if (level > 3)
-                {
-                    level = 1;
-                }
-
-                preparing = true;
-
-                StopMusic();
-
-                // wait 10 seconds before switching to the next level
-                Invoke("SwitchScenes", 10);
+                NextLevel();
             }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            NextLevel();
         }
 
         if (Input.GetKeyDown(KeyCode.Escape))

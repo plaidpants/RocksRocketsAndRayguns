@@ -17,7 +17,26 @@ public class RockSphere : NetworkBehaviour
     [SyncVar] public float radius = 0;
     [SyncVar] public Vector3 pos = Vector3.zero;
     [SyncVar] public Quaternion rot = Quaternion.identity;
-    public static int count = 0;
+    static public int currentRocks = 0; // number of rocks currently active
+    static public int totalRocks = 0; // number of rocks currently active plus subsequent rocks
+    static public int destroyedRocks = 0; // number of rocks destoryed
+
+    [ClientRpc]
+    void rpcSetRockStats(int current, int total, int destroyed)
+    {
+        totalRocks = total;
+        destroyedRocks = destroyed;
+
+        //Debug.Log("client RPC Rocks " + current + " total " + totalRocks + " destoyed " + destroyedRocks);
+    }
+
+    [Server]
+    public static void ResetRockStats()
+    {
+        currentRocks = 0; // number of rocks currently active
+        totalRocks = 0; // number of rocks currently active plus subsequent rocks
+        destroyedRocks = 0; // number of rocks destoryed
+    }
 
     // Use this for initialization
     public override void OnStartServer()
@@ -48,11 +67,17 @@ public class RockSphere : NetworkBehaviour
         Vector3 torque = Random.onUnitSphere * (Random.Range(minSpeed, maxSpeed) / radius);
         // ???? note this could be pointing right at us or away so no torque would be added need to catch this and get a new torque
         rb.AddTorque(Vector3.Cross(torque, pos.normalized));
+
+        totalRocks++;
+        currentRocks++;
+
+        //Debug.Log("current rocks " + currentRocks + " Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
+
+        rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);
     }
 
     void Start()
     {
-        count++;
     }
 
     public override void OnStartClient()
@@ -74,7 +99,9 @@ public class RockSphere : NetworkBehaviour
 
             destroyed = true;
             NetworkServer.Destroy(transform.gameObject);
-            count--;
+
+            destroyedRocks++;
+            currentRocks--;
 
             if (rockSpherePrefab)
             {
@@ -84,45 +111,16 @@ public class RockSphere : NetworkBehaviour
                     NetworkServer.Spawn(newRock);
                 }
             }
+
+            //Debug.Log("Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
+
+            // let all the clients know the current rock counts for music
+            rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);
         }
     }
 
     // Update is called once per frame
     void Update ()
     {
-        /*
-        // parent object is in the center, probably don't need this, only the second else
-        if (transform.position.magnitude == 0)
-        {
-            // get the child rock
-            rock = transform.Find("Rock.old").gameObject;
-
-            // is the child rock at the center also
-            if (rock.transform.position.magnitude == 0)
-            {
-                // We need to move child out since mirror did not do this for us when the client connected to the server initially
-                rock.transform.localPosition = pos;
-                rock.transform.localRotation = rot;
-            }
-        }
-        else
-        {
-            // get the child rock, need to do this here because of a difference in order of operation of the Start() call for in game spawn vs client connect spawn
-            rock = transform.Find("Rock.old").gameObject;
-
-            // is the child rock at the same position as the parent gameobject
-            if (rock.transform.position.magnitude == 0)
-            {
-                rock.transform.localPosition = pos;
-                rock.transform.localRotation = rot;
-            }
-        }
-        */
-        //Rigidbody rb = GetComponent<Rigidbody>();
-        //Quaternion turn = Quaternion.Euler(0f, 0f, -10);
-        //rb.MoveRotation(rb.rotation * turn);
-
-        //float rotation =  rotationSpeed * Time.deltaTime;
-        //transform.Rotate(0, rotation, 0);
     }
 }
