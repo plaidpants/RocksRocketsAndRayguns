@@ -51,6 +51,8 @@ public class MusicHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Debug.Log("Rocks " + RockSphere.currentRocks + " total " + RockSphere.totalRocks + " destoyed " + RockSphere.destroyedRocks);
+
         // are we done shooting rocks and have not started the outro music
         if (RockSphere.destroyedRocks == totalNumberOfRocksInLevel)
         {

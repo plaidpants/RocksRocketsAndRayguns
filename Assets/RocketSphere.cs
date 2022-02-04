@@ -86,7 +86,7 @@ public class RocketSphere : NetworkBehaviour
                     continue;
                 }
                 count++;
-                if (count > 30)
+                if (count > 100)
                 {
                     Debug.Log("Give up finding a better color");
                     break; // give up
@@ -247,13 +247,6 @@ public class RocketSphere : NetworkBehaviour
             // play the hyperspace sound
             hyperspaceSound.Play();
         }
-    }
-
-    [ClientRpc]
-    public void RpcStopMusic()
-    {
-        // stop the music at the end of the level
-        Camera.main.transform.gameObject.GetComponent<AudioSource>().Stop();
     }
 
     [ClientRpc]

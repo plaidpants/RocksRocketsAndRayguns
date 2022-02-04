@@ -24,10 +24,11 @@ public class RockSphere : NetworkBehaviour
     [ClientRpc]
     void rpcSetRockStats(int current, int total, int destroyed)
     {
+        currentRocks = current;
         totalRocks = total;
         destroyedRocks = destroyed;
 
-        //Debug.Log("client RPC Rocks " + current + " total " + totalRocks + " destoyed " + destroyedRocks);
+        Debug.Log("client RPC Rocks " + current + " total " + total + " destoyed " + destroyed);
     }
 
     [Server]
