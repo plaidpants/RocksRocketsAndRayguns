@@ -72,8 +72,7 @@ public class RockSphere : NetworkBehaviour
         totalRocks++;
         currentRocks++;
 
-        //Debug.Log("current rocks " + currentRocks + " Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
-
+        Debug.Log("current rocks " + currentRocks + " Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
         rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);
     }
 
@@ -113,7 +112,7 @@ public class RockSphere : NetworkBehaviour
                 }
             }
 
-            //Debug.Log("Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
+            Debug.Log("Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
 
             // let all the clients know the current rock counts for music
             rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);

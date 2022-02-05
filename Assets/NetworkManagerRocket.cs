@@ -75,12 +75,6 @@ public class NetworkManagerRocket : NetworkManager
             }
         }
 
-        // debug TODO: remove later
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            NextLevel();
-        }
-
         // allow the desktop game to quit
         if (Input.GetKeyDown(KeyCode.Escape))
         {
