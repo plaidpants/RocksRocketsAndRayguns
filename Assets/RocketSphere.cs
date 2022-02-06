@@ -39,8 +39,6 @@ public class RocketSphere : NetworkBehaviour
     AudioSource hyperspaceSound;
     AudioSource engineSound;
 
-    AudioSource [] musicLoops;
-
     public GameObject explosionPrefab;
     Rigidbody rb;
     [SyncVar] Color RocketColor = Color.white;
@@ -460,8 +458,11 @@ public class RocketSphere : NetworkBehaviour
         if (!rocket)
             return;
 
-        // make sure the state matches the server state
-        if (visible != rocket.activeSelf)
+        // make sure the state matches the server state,
+        // don't do this on the server as you may enable the ship
+        // while it is spawning in, this is only for clients
+        // to catch up the other rocket enable states in the game
+        if ((visible != rocket.activeSelf) && isClient)
         {
             rocket.SetActive(visible);
         }
