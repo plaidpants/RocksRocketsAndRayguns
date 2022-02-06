@@ -15,6 +15,7 @@ public class RockField : NetworkBehaviour
     {
         base.OnStartServer();
 
+        // create a bunch of rocks
         for (int i = 0; i < numberOfRocks; i++)
         {
             //calculate random position and rotate so it faces the center
@@ -24,7 +25,6 @@ public class RockField : NetworkBehaviour
             GameObject rock = Instantiate(RockSpherePrefab, pos, rot) as GameObject;
 
             NetworkServer.Spawn(rock);
-            //rock.transform.SetParent(transform);
         }
     }
 
@@ -33,8 +33,9 @@ public class RockField : NetworkBehaviour
         base.OnStartClient();
     }
 
-        // Update is called once per frame
-        void Update ()
+    // Update is called once per frame
+    void Update ()
     {
+
 	}
 }

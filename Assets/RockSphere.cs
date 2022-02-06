@@ -28,7 +28,7 @@ public class RockSphere : NetworkBehaviour
         totalRocks = total;
         destroyedRocks = destroyed;
 
-        Debug.Log("client RPC Rocks " + current + " total " + total + " destoyed " + destroyed);
+//        Debug.Log("client RPC Rocks " + current + " total " + total + " destoyed " + destroyed);
     }
 
     [Server]
@@ -72,7 +72,7 @@ public class RockSphere : NetworkBehaviour
         totalRocks++;
         currentRocks++;
 
-        Debug.Log("OnStartServer current rocks " + currentRocks + " Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
+ //       Debug.Log("OnStartServer current rocks " + currentRocks + " Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
         rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);
     }
 
@@ -100,7 +100,7 @@ public class RockSphere : NetworkBehaviour
             destroyedRocks++;
             currentRocks--;
 
-            Debug.Log("OntriggerEnter Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
+//            Debug.Log("OntriggerEnter Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
 
             // let all the clients know the current rock counts for music
             // IMPORTANT!!!!, this must be called before the detroy or the rpc will never go out.

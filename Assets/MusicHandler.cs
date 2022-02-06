@@ -32,17 +32,21 @@ public class MusicHandler : NetworkBehaviour
             musicLoops[i] = gameObject.AddComponent<AudioSource>();
             //Assign the corresponding audio clip to its audio source
             musicLoops[i].clip = musicClipLoops[i];
+            musicLoops[i].loop = false;
+            musicLoops[i].volume = 0.5f;
         }
 
         // get the outro music
         outroMusic = gameObject.AddComponent<AudioSource>();
         outroMusic.clip = outroMusicClip;
         outroMusic.loop = false;
+        outroMusic.volume = 0.5f;
 
         // start the intro music
         introMusic = gameObject.AddComponent<AudioSource>();
         introMusic.clip = introMusicClip;
         introMusic.loop = false;
+        introMusic.volume = 0.5f;
         introMusic.Play();
         
         // queue the first loop playing and looping after the intro
@@ -55,6 +59,7 @@ public class MusicHandler : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
+        // wait until we initialized, client start might be delayed
         if (!initialized)
             return;
 
@@ -65,6 +70,7 @@ public class MusicHandler : NetworkBehaviour
         {
             Debug.Log("done destroying rocks");
 
+            // check if we already have the outro music queue or we are still playing the intro
             if (!outroQueued)
             {
                 Debug.Log("outro is not playing or queued");
@@ -119,7 +125,7 @@ public class MusicHandler : NetworkBehaviour
             }
         }
         // is there a progression playing and nothing queued
-        else if (musicLoops[musicProgression].isPlaying && !musicLoops[lastMusicProgression].isPlaying)
+        else if (musicLoops[musicProgression].isPlaying && !musicLoops[lastMusicProgression].isPlaying && !introMusic.isPlaying)
         {
             //Debug.Log("No music queued");
 

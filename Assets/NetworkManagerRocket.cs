@@ -55,6 +55,7 @@ public class NetworkManagerRocket : NetworkManager
             level = 1;
         }
 
+        // get a hold of the music handler
         MusicHandler mh = FindObjectOfType<MusicHandler>();
 
         // wait for outro music + last music loop + 5 seconds before switching to the next level

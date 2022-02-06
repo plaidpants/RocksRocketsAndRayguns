@@ -9,11 +9,14 @@ public class ShotSphere : NetworkBehaviour
     public GameObject shotPrefab;
     GameObject shot;
     public GameObject explosionPrefab;
-    public float playershooterhue = -10.0f;
+    public int playerShooterColorIndex = -10; // used to keep track of the player who shot this shot
     bool destroyed = false;
 
     public override void OnStartServer()
     {
+        base.OnStartServer();
+ 
+        // this object is short lived
         Invoke(nameof(DestroySelf), 1.5f);
     }
 
@@ -27,15 +30,10 @@ public class ShotSphere : NetworkBehaviour
         transform.position = Vector3.zero;
 
         // we use the rotation that was set by the player object
-
         shot = transform.Find("shot").gameObject;
 
-        //shot = Instantiate(shotPrefab, Vector3.zero, Quaternion.identity) as GameObject;
-        //shot.transform.SetParent(transform);
         shot.transform.position = transform.rotation * Vector3.forward * radius;
         shot.transform.rotation = transform.rotation;
-        
-        //Destroy(transform.gameObject, 1.5f);
     }
 
     // ServerCallback because we don't want a warning
@@ -43,17 +41,21 @@ public class ShotSphere : NetworkBehaviour
     [ServerCallback]
     void OnTriggerEnter(Collider other)
     {
+        // get the collider rocket if it exists
         RocketSphere rocket = other.attachedRigidbody.GetComponent<RocketSphere>();
 
+        // have we collided with a rocket
         if (rocket)
         {
-            if (rocket.hue == playershooterhue)
+            // check if we are running into our own shots
+            if (rocket.rocketColorIndex == playerShooterColorIndex)
             {
                 // ignore our own shots
                 return;
             }
         }
 
+        // don't destroy ourself more than once
         if (destroyed == false)
         {
             destroyed = true;
@@ -65,7 +67,12 @@ public class ShotSphere : NetworkBehaviour
     [Server]
     void DestroySelf()
     {
-        NetworkServer.Destroy(gameObject);
+        // don't destroy ourself more than once
+        if (destroyed == false)
+        {
+            destroyed = true;
+            NetworkServer.Destroy(gameObject);
+        }
     }
 
     // Update is called once per frame

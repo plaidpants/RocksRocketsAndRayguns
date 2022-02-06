@@ -15,6 +15,7 @@ using UnityEngine;
 // readjust center point if head moves too far away from center
 // add fade in and out of levels
 // shots same color as ships
+// animate hyperspace between radius levels
 
 //rockets, rocks and ray-guns
 // stick man astronauts
@@ -38,11 +39,13 @@ public class RocketSphere : NetworkBehaviour
     ParticleSystem engineParticleSystem;
     AudioSource hyperspaceSound;
     AudioSource engineSound;
+    public Color[] RocketColors;
+    public static bool[] colorInUse = { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false } ;
+    [SyncVar] public int rocketColorIndex = -1;
 
     public GameObject explosionPrefab;
     Rigidbody rb;
     [SyncVar] Color RocketColor = Color.white;
-    public float hue = 2.0f;
     [SyncVar] bool visible = false;
     [SyncVar] Quaternion rot2Save = Quaternion.identity;
 
@@ -52,6 +55,7 @@ public class RocketSphere : NetworkBehaviour
 
     void OnDestroy()
     {
+        // avoid memory leak
         Destroy(cachedMaterial);
     }
     
@@ -60,73 +64,83 @@ public class RocketSphere : NetworkBehaviour
         // call the base function, important, odd behavior when connecting when not on same start scene
         base.OnStartServer();
 
-        // create a random color for each player as they are created on the server
-        //RocketColor = new Color(Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f), Random.Range(0.3f, 1.0f));
-        
-         // only use a colored ship if we are not the host so we can see who the host is and avoid shutdown of the host
+        // only use a colored ship if we are not the host so we can see who the host is and avoid shutdown of the host
         if (!isLocalPlayer)
         {
-            hue = Random.Range(0.0f, 1.0f);
-            Debug.Log("player check hue " + hue);
+            // pick a random bright color index
+            rocketColorIndex = (int)Random.Range(0.0f, RocketColors.Length - 0.01f);
+            Debug.Log("player check color " + rocketColorIndex);
 
+            // get all the current players
             RocketSphere[] players = FindObjectsOfType<RocketSphere>();
 
+            // initialize a breakout count
             int count = 0;
+
+            // check each player
             for (int i = 0; i < players.Length; i++)
             {
-                float otherplayerhue = players[i].hue;
-
-                Debug.Log("Other Player " + i + " hue " + otherplayerhue);
-
+                // don't check againts ourself
                 if (players[i] == this)
                 {
-                    Debug.Log("this player " + i + " skip");
+                    Debug.Log("this player " + i + " skip color check");
                     continue;
                 }
+
+                Debug.Log("Other Player " + i + " color " + players[i].rocketColorIndex);
+
+                // increment our breakout count
                 count++;
+
+                // breakout if we reach a limit
                 if (count > 100)
                 {
                     Debug.Log("Give up finding a better color");
+                    
+                    // use the first index if all else fails
+                    rocketColorIndex = 0;
+
+                    // go through all the colors in use table
+                    for (int j = 0; j < colorInUse.Length; j++)
+                    {
+                        // just chose the first color not in use
+                        if (colorInUse[j] == false)
+                        {
+                            rocketColorIndex = j;
+                            break; // done searching
+                        }
+                    }
                     break; // give up
                 }
 
-                // check for difference between player and chosen hue,
-                // difference check must be small enough that we have enough colors for all players.
-                // if max player count is increased from 4, this value should be reassessed
-                // this could be an infinte check otherwise, might want a failsafe escape
-
-                Debug.Log("diffs " + 
-                    Mathf.Abs(hue - otherplayerhue) + " " + 
-                    Mathf.Abs(hue - otherplayerhue + 1.0f) + " " + 
-                    Mathf.Abs(hue - otherplayerhue - 1.0f));
-                const float colorhuediffmax = 0.10f;
-
-                if (    ((Mathf.Abs(hue - otherplayerhue) < colorhuediffmax) || 
-                        (Mathf.Abs(hue - otherplayerhue + 1.0f) < colorhuediffmax) || 
-                        (Mathf.Abs(hue - otherplayerhue - 1.0f) < colorhuediffmax)) && 
-                        (players[i] != this))
+                // check for different color between player and selected color
+                if (players[i].rocketColorIndex == rocketColorIndex)
                 {
-                    Debug.Log("Player " + i + " hue " + players[i].hue + " too close to hue " + hue);
+                    Debug.Log("Player " + i + " color " + players[i].rocketColorIndex + " matches " + players[i].rocketColorIndex);
 
-                    // generate a new hue if it is too close to this other players color
-                    hue = Random.Range(0.0f, 1.0f);
+                    // generate a new color index if it matches other players color
+                    rocketColorIndex = (int)Random.Range(0.0f, RocketColors.Length - 0.01f);
 
-                    Debug.Log("try new hue " + hue);
+                    Debug.Log("try new color " + rocketColorIndex);
 
-                    // restart check with new hue until we find a hue that is different enough from all the other players.
+                    // restart check index to check new color index with all the players again
+                    // until we find a color index that is different from all the other players.
                     i = 0;
                 }
             }
 
-            // rocket color is now set for this player until it is destroyed or disconnects
-            RocketColor = Color.HSVToRGB(hue, 1.0f, 1.0f);
-            Debug.Log("player assigned hue " + hue);
+            // set rocket color for this player until it is destroyed or disconnects
+            RocketColor = RocketColors[rocketColorIndex];
+            colorInUse[rocketColorIndex] = true;
+            Debug.Log("player assigned color " + rocketColorIndex);
         } 
-        else
+        else // server player
         {
             // server color is always white
             RocketColor = Color.white;
-            hue = -2.0f;
+
+            // need to set the color index so we don't overlap any of the color indexes
+            rocketColorIndex = -1;
         }
 
         // Find the rocket child object
@@ -291,7 +305,7 @@ public class RocketSphere : NetworkBehaviour
 
         if (shot)
         {
-            if (shot.playershooterhue == hue)
+            if (shot.playerShooterColorIndex == rocketColorIndex)
             {
                 // ignore our own shots
                 return;
@@ -322,7 +336,7 @@ public class RocketSphere : NetworkBehaviour
         GameObject shot = Instantiate(shotPrefab, pos, rot) as GameObject;
 
         // save the hue of the shooter in the shot so we won't collide with it later
-        shot.GetComponent<ShotSphere>().playershooterhue = hue;
+        shot.GetComponent<ShotSphere>().playerShooterColorIndex = rocketColorIndex;
 
         shot.transform.rotation = transform.rotation;
         
@@ -414,7 +428,6 @@ public class RocketSphere : NetworkBehaviour
         RpcEngineOff();
     }
 
-    //??? this would be nice to animate between radius levels
     [Client]
     void Hyperspace()
     {
