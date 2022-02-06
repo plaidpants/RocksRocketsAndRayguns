@@ -55,9 +55,11 @@ public class NetworkManagerRocket : NetworkManager
             level = 1;
         }
 
+        MusicHandler mh = FindObjectOfType<MusicHandler>();
+
         // wait for outro music + last music loop + 5 seconds before switching to the next level
-        Invoke("SwitchScenes", Camera.main.transform.gameObject.GetComponent<MusicHandler>().outroMusicClip.length + 
-            Camera.main.transform.gameObject.GetComponent<MusicHandler>().musicClipLoops[Camera.main.transform.gameObject.GetComponent<MusicHandler>().musicClipLoops.Length - 1].length 
+        Invoke("SwitchScenes", mh.outroMusicClip.length +
+            mh.musicClipLoops[mh.musicClipLoops.Length - 1].length 
             + 5);
     }
 

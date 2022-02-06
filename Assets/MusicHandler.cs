@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
-public class MusicHandler : MonoBehaviour
+public class MusicHandler : NetworkBehaviour
 {
     public int totalNumberOfRocksInLevel = 0;
 
@@ -18,9 +19,10 @@ public class MusicHandler : MonoBehaviour
     public int musicProgression = 0;
     bool outroQueued = false;
 
+    bool initialized = false;
 
     // Start is called before the first frame update
-    void Start()
+    public override void OnStartClient()
     {
         musicLoops = new AudioSource[musicClipLoops.Length];
 
@@ -46,11 +48,16 @@ public class MusicHandler : MonoBehaviour
         // queue the first loop playing and looping after the intro
         musicLoops[0].loop = true;
         musicLoops[0].PlayScheduled(AudioSettings.dspTime + introMusic.clip.length);
+
+        initialized = true;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (!initialized)
+            return;
+
         //Debug.Log("Rocks " + RockSphere.currentRocks + " total " + RockSphere.totalRocks + " destoyed " + RockSphere.destroyedRocks);
 
         // are we done shooting rocks and have not started the outro music

@@ -72,7 +72,7 @@ public class RockSphere : NetworkBehaviour
         totalRocks++;
         currentRocks++;
 
-        Debug.Log("current rocks " + currentRocks + " Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
+        Debug.Log("OnStartServer current rocks " + currentRocks + " Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
         rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);
     }
 
@@ -97,11 +97,17 @@ public class RockSphere : NetworkBehaviour
             GameObject explosion = Instantiate(explosionPrefab, rock.transform.position, Quaternion.identity) as GameObject;
             NetworkServer.Spawn(explosion);
 
-            destroyed = true;
-            NetworkServer.Destroy(transform.gameObject);
-
             destroyedRocks++;
             currentRocks--;
+
+            Debug.Log("OntriggerEnter Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
+
+            // let all the clients know the current rock counts for music
+            // IMPORTANT!!!!, this must be called before the detroy or the rpc will never go out.
+            rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);
+
+            destroyed = true;
+            NetworkServer.Destroy(transform.gameObject);
 
             if (rockSpherePrefab)
             {
@@ -111,11 +117,6 @@ public class RockSphere : NetworkBehaviour
                     NetworkServer.Spawn(newRock);
                 }
             }
-
-            Debug.Log("Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
-
-            // let all the clients know the current rock counts for music
-            rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);
         }
     }
 
