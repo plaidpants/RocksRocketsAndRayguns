@@ -1,6 +1,6 @@
 # RocksRocketsAndRayguns
 
-Multiplayer VR Spaceship and Rock shooter, focus on support for GearVR but will work on other platforms. Current version in respository is not working yet. Release version is available with single player.
+Multiplayer VR Spaceship and Rock shooter, focus on support for GearVR but will work on other platforms.
 
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/k03XqD0PCIc/0.jpg)](http://www.youtube.com/watch?v=k03XqD0PCIc "Rocks Rockets And Rayguns")
 
