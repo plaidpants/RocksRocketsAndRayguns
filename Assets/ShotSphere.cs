@@ -9,7 +9,8 @@ public class ShotSphere : NetworkBehaviour
     public GameObject shotPrefab;
     GameObject shot;
     public GameObject explosionPrefab;
-    public int playerShooterColorIndex = -10; // used to keep track of the player who shot this shot
+    public int shooterColorIndex = -10; // used to keep track of the player who shot this shot
+    public float lifeTime = 1.5f;
     bool destroyed = false;
 
     public override void OnStartServer()
@@ -17,7 +18,7 @@ public class ShotSphere : NetworkBehaviour
         base.OnStartServer();
  
         // this object is short lived
-        Invoke(nameof(DestroySelf), 1.5f);
+        Invoke(nameof(DestroySelf), lifeTime);
     }
 
     // Use this for initialization
@@ -48,7 +49,7 @@ public class ShotSphere : NetworkBehaviour
         if (rocket)
         {
             // check if we are running into our own shots
-            if (rocket.rocketColorIndex == playerShooterColorIndex)
+            if (rocket.rocketColorIndex == shooterColorIndex)
             {
                 // ignore our own shots
                 return;

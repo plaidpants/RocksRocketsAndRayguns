@@ -39,8 +39,6 @@ public class RocketSphere : NetworkBehaviour
     ParticleSystem engineParticleSystem;
     AudioSource hyperspaceSound;
     AudioSource engineSound;
-    public Color[] RocketColors;
-    public static bool[] colorInUse = { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false } ;
     [SyncVar] public int rocketColorIndex = -1;
 
     public GameObject explosionPrefab;
@@ -57,8 +55,15 @@ public class RocketSphere : NetworkBehaviour
     {
         // avoid memory leak
         Destroy(cachedMaterial);
+
+        // return the color so others can use it
+        ColorManager cm = FindObjectsOfType<ColorManager>()[0];
+        if (cm)
+        {
+            cm.ReleaseColorIndex(rocketColorIndex);
+        }
     }
-    
+
     public override void OnStartServer()
     {
         // call the base function, important, odd behavior when connecting when not on same start scene
@@ -67,71 +72,9 @@ public class RocketSphere : NetworkBehaviour
         // only use a colored ship if we are not the host so we can see who the host is and avoid shutdown of the host
         if (!isLocalPlayer)
         {
-            // pick a random bright color index
-            rocketColorIndex = (int)Random.Range(0.0f, RocketColors.Length - 0.01f);
-            Debug.Log("player check color " + rocketColorIndex);
-
-            // get all the current players
-            RocketSphere[] players = FindObjectsOfType<RocketSphere>();
-
-            // initialize a breakout count
-            int count = 0;
-
-            // check each player
-            for (int i = 0; i < players.Length; i++)
-            {
-                // don't check againts ourself
-                if (players[i] == this)
-                {
-                    Debug.Log("this player " + i + " skip color check");
-                    continue;
-                }
-
-                Debug.Log("Other Player " + i + " color " + players[i].rocketColorIndex);
-
-                // increment our breakout count
-                count++;
-
-                // breakout if we reach a limit
-                if (count > 100)
-                {
-                    Debug.Log("Give up finding a better color");
-                    
-                    // use the first index if all else fails
-                    rocketColorIndex = 0;
-
-                    // go through all the colors in use table
-                    for (int j = 0; j < colorInUse.Length; j++)
-                    {
-                        // just chose the first color not in use
-                        if (colorInUse[j] == false)
-                        {
-                            rocketColorIndex = j;
-                            break; // done searching
-                        }
-                    }
-                    break; // give up
-                }
-
-                // check for different color between player and selected color
-                if (players[i].rocketColorIndex == rocketColorIndex)
-                {
-                    Debug.Log("Player " + i + " color " + players[i].rocketColorIndex + " matches " + players[i].rocketColorIndex);
-
-                    // generate a new color index if it matches other players color
-                    rocketColorIndex = (int)Random.Range(0.0f, RocketColors.Length - 0.01f);
-
-                    Debug.Log("try new color " + rocketColorIndex);
-
-                    // restart check index to check new color index with all the players again
-                    // until we find a color index that is different from all the other players.
-                    i = 0;
-                }
-            }
-
-            // set rocket color for this player until it is destroyed or disconnects
-            RocketColor = RocketColors[rocketColorIndex];
-            colorInUse[rocketColorIndex] = true;
+            ColorManager cm = FindObjectsOfType<ColorManager>()[0];
+            rocketColorIndex = cm.ReserveColorIndex();
+            RocketColor = cm.GetColor(rocketColorIndex);
             Debug.Log("player assigned color " + rocketColorIndex);
         } 
         else // server player
@@ -139,7 +82,7 @@ public class RocketSphere : NetworkBehaviour
             // server color is always white
             RocketColor = Color.white;
 
-            // need to set the color index so we don't overlap any of the color indexes
+            // need to set the color index so we don't overlap any of the color positive or zero indexes
             rocketColorIndex = -1;
         }
 
@@ -305,7 +248,7 @@ public class RocketSphere : NetworkBehaviour
 
         if (shot)
         {
-            if (shot.playerShooterColorIndex == rocketColorIndex)
+            if (shot.shooterColorIndex == rocketColorIndex)
             {
                 // ignore our own shots
                 return;
@@ -336,7 +279,7 @@ public class RocketSphere : NetworkBehaviour
         GameObject shot = Instantiate(shotPrefab, pos, rot) as GameObject;
 
         // save the hue of the shooter in the shot so we won't collide with it later
-        shot.GetComponent<ShotSphere>().playerShooterColorIndex = rocketColorIndex;
+        shot.GetComponent<ShotSphere>().shooterColorIndex = rocketColorIndex;
 
         shot.transform.rotation = transform.rotation;
         
