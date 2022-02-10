@@ -22,6 +22,10 @@ public class RocketSphereAI : NetworkBehaviour
     float timer = 0.0f;
     float timerExpired = 1.0f;
     [SyncVar] public int rocketAIColorIndex = -1;
+    float copyPlayerInverted = 1.0f;
+    bool copyPlayer = false;
+    float shotTimer = 0.0f;
+    float shotTimerExpired = 1.0f;
 
     public GameObject explosionPrefab;
     Rigidbody rb;
@@ -37,8 +41,14 @@ public class RocketSphereAI : NetworkBehaviour
         Destroy(cachedMaterial);
 
         // return the color so others can use it
-        ColorManager cm = FindObjectsOfType<ColorManager>()[0];
-        cm.ReleaseColorIndex(rocketAIColorIndex);
+        ColorManager[] cm = FindObjectsOfType<ColorManager>();
+        if (cm.Length > 0)
+        {
+            if (cm[0])
+            {
+                cm[0].ReleaseColorIndex(rocketAIColorIndex);
+            }
+        }
     }
 
     public override void OnStartServer()
@@ -215,10 +225,6 @@ public class RocketSphereAI : NetworkBehaviour
     {
         float rotation = 0.0f;
         float forward = 0.0f;
-        float horizontalInput = 0.0f;
-        float verticalInput = 0.0f;
-        float copyPlayerInverted = 1.0f;
-        bool copyPlayer = false;
 
         // check if client start has been called yet
         if (!rocket) return;
@@ -232,9 +238,8 @@ public class RocketSphereAI : NetworkBehaviour
         // Check if we have expired the timer
         if (timer > timerExpired)
         {
-            /*
             // should we copy the player 
-            if (Random.Range(0.0f,1.0f) < 0.1f)
+            if (Random.Range(0.0f, 1.0f) < 0.2f)
             {
                 copyPlayer = true;
 
@@ -252,9 +257,9 @@ public class RocketSphereAI : NetworkBehaviour
             {
                 copyPlayer = false;
             }
-            */
+
             // should we turn
-            if (Random.Range(0.0f, 1.0f) < 0.2f) 
+            if (Random.Range(0.0f, 1.0f) < 0.3f) 
             {
                 if (Random.Range(0.0f, 1.0f) < 0.5f)
                 {
@@ -265,10 +270,10 @@ public class RocketSphereAI : NetworkBehaviour
                     horizontalInput = Random.Range(-1.0f, -0.25f);
                 }
             }
-            else
+ //           else
             {
                 // either turn or go forward not both at the same time
-                horizontalInput = 0.0f;
+ //               horizontalInput = 0.0f;
 
                 // should we go forward
                 if (Random.Range(0.0f, 1.0f) < 0.2f)
@@ -285,6 +290,12 @@ public class RocketSphereAI : NetworkBehaviour
             if (Random.Range(0.0f, 1.0f) < 0.2f) 
             {
                 fireInput = true;
+                timer = 0.0f;
+                shotTimerExpired = Random.Range(0.15f, 0.25f);
+            }
+            else
+            {
+                fireInput = false;
             }
 
             // update the time, important to subtract the last timer value instead of reseting to zero
@@ -292,11 +303,10 @@ public class RocketSphereAI : NetworkBehaviour
             timer = timer - timerExpired;
 
             // next timer check is random also
-            timerExpired = Random.Range(0.25f, 2.0f);
+            timerExpired = Random.Range(0.25f, 1.0f);
         }
 
-        /*
-        if (false) // copyPlayer)
+        if (copyPlayer)
         {
             // left and right rotation is controlled by the horizontal joystick axis
             horizontalInput = copyPlayerInverted * Input.GetAxis("Horizontal");
@@ -304,7 +314,6 @@ public class RocketSphereAI : NetworkBehaviour
             // forward momentum is controlled by the verticle joystick axis
             verticalInput = copyPlayerInverted * Input.GetAxis("Vertical");
         }
-        */
 
         // should
         // left and right rotation is controlled by the horizontal joystick axis
@@ -337,8 +346,18 @@ public class RocketSphereAI : NetworkBehaviour
 
         if (fireInput == true)
         {
-            fireInput = false; // only fire once
-            Fire();
+            // update the timer
+            shotTimer += Time.deltaTime;
+            
+            if (shotTimer > shotTimerExpired)
+            {
+                //fireInput = false; // only fire once
+                Fire();
+
+                // update the time, important to subtract the last timer value instead of reseting to zero
+                // as we make not have expired the time at precisely the timer period
+                shotTimer = shotTimer - shotTimerExpired;
+            }
         }
     }
 }

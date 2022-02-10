@@ -57,10 +57,16 @@ public class RocketSphere : NetworkBehaviour
         Destroy(cachedMaterial);
 
         // return the color so others can use it
-        ColorManager cm = FindObjectsOfType<ColorManager>()[0];
-        if (cm)
+        ColorManager[] cm = FindObjectsOfType<ColorManager>();
+        if (cm.Length > 0)
         {
-            cm.ReleaseColorIndex(rocketColorIndex);
+            if (cm[0])
+            {
+                if (rocketColorIndex >= 0)
+                {
+                    cm[0].ReleaseColorIndex(rocketColorIndex);
+                }
+            }
         }
     }
 
@@ -465,11 +471,6 @@ public class RocketSphere : NetworkBehaviour
         if (Input.GetButtonDown("Fire2"))
         {
             CmdHyperspace();
-        }
-
-        if (Input.GetButtonDown("Submit"))
-        {
-
         }
     }
 }
