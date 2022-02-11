@@ -47,6 +47,8 @@ public class RocketSphere : NetworkBehaviour
     [SyncVar] bool visible = false;
     [SyncVar] Quaternion rot2Save = Quaternion.identity;
 
+    //bool isSpawning = false;
+
     // Unity makes a clone of the Material every time GetComponent<Renderer>().material is used.
     // Cache it here and Destroy it in OnDestroy to prevent a memory leak.
     Material cachedMaterial;
@@ -229,17 +231,15 @@ public class RocketSphere : NetworkBehaviour
 
         // re-enable this rocket on all clients through server at the direction the user is looking at the moment
         CmdMySetActive(true, Camera.main.transform.rotation, true);
-        isSpawning = false;
+        //isSpawning = false;
     }
-
-    bool isSpawning;
 
     [ClientRpc]
     public void rpcSpawnShipDelay()
     {
         if (!isLocalPlayer) return;
 
-        isSpawning = true;
+        //isSpawning = true;
         Invoke("SpawnShip", 5);
     }
 

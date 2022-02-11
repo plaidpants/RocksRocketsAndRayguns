@@ -57,9 +57,16 @@ public class RocketSphereAI : NetworkBehaviour
         base.OnStartServer();
 
         // get a color from the color manager
-        ColorManager cm = FindObjectsOfType<ColorManager>()[0];
-        rocketAIColorIndex = cm.ReserveColorIndex();
-        RocketColor = cm.GetColor(rocketAIColorIndex);
+        // return the color so others can use it
+        ColorManager[] cm = FindObjectsOfType<ColorManager>();
+        if (cm.Length > 0)
+        {
+            if (cm[0])
+            {
+                rocketAIColorIndex = cm[0].ReserveColorIndex();
+                RocketColor = cm[0].GetColor(rocketAIColorIndex);
+            }
+        }
 
         // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
