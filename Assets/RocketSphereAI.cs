@@ -16,9 +16,9 @@ public class RocketSphereAI : NetworkBehaviour
     ParticleSystem.MainModule mainModule;
     ParticleSystem engineParticleSystem;
     AudioSource engineSound;
-    float horizontalInput = 0.0f;
-    float verticalInput = 0.0f;
-    bool fireInput = false;
+    public float horizontalInput = 0.0f;
+    public float verticalInput = 0.0f;
+    public bool fireInput = false;
     float timer = 0.0f;
     float timerExpired = 1.0f;
     [SyncVar] public int rocketAIColorIndex = -1;
@@ -26,6 +26,7 @@ public class RocketSphereAI : NetworkBehaviour
     bool copyPlayer = false;
     float shotTimer = 0.0f;
     float shotTimerExpired = 1.0f;
+    [SyncVar] public int points = 0;
 
     public GameObject explosionPrefab;
     Rigidbody rb;
@@ -124,18 +125,36 @@ public class RocketSphereAI : NetworkBehaviour
     {
         ShotSphere shot = other.attachedRigidbody.GetComponent<ShotSphere>();
 
+        // did a shot hit us
         if (shot)
         {
-            if (shot.shooterColorIndex == rocketAIColorIndex)
+            if (shot.shooter == transform.gameObject)
             {
                 // ignore our own shots
                 return;
+            }
+
+            // did a player shoot us, give them some points
+            RocketSphere playerShooter = shot.shooter.GetComponent<RocketSphere>();
+            if (playerShooter)
+            {
+                playerShooter.points++;
+            }
+
+            // did a AI shoot us, give them some points
+            RocketSphereAI rocketShooterAI = shot.shooter.GetComponent<RocketSphereAI>();
+            if (rocketShooterAI)
+            {
+                rocketShooterAI.points++;
             }
         }
 
         // Spawn an explosion at rocket position on all clients
         GameObject explosion = Instantiate(explosionPrefab, rocket.transform.position, Quaternion.identity) as GameObject;
         NetworkServer.Spawn(explosion);
+
+        // let the AI know we finished
+        transform.gameObject.GetComponent<RocketAIAgent>().EpisodeEnd();
 
         // destory the ship on all clients
         NetworkServer.Destroy(transform.gameObject);
@@ -153,8 +172,9 @@ public class RocketSphereAI : NetworkBehaviour
 
         GameObject shot = Instantiate(shotPrefab, pos, rot) as GameObject;
 
-        // save the hue of the shooter in the shot so we won't collide with it later
-        shot.GetComponent<ShotSphere>().shooterColorIndex = rocketAIColorIndex;
+        // save the the shooter in the shot so we won't collide with it later
+        //shot.GetComponent<ShotSphere>().shooterColorIndex = rocketAIColorIndex;
+        shot.GetComponent<ShotSphere>().shooter = transform.gameObject;
 
         shot.transform.rotation = transform.rotation;
         
@@ -239,6 +259,7 @@ public class RocketSphereAI : NetworkBehaviour
         // this is a server controlled ship
         if (!isServer) return;
 
+        /*
         // update the timer
         timer += Time.deltaTime;
 
@@ -277,20 +298,15 @@ public class RocketSphereAI : NetworkBehaviour
                     horizontalInput = Random.Range(-1.0f, -0.25f);
                 }
             }
- //           else
+ 
+            // should we go forward
+            if (Random.Range(0.0f, 1.0f) < 0.2f)
             {
-                // either turn or go forward not both at the same time
- //               horizontalInput = 0.0f;
-
-                // should we go forward
-                if (Random.Range(0.0f, 1.0f) < 0.2f)
-                {
-                    verticalInput = Random.Range(0.25f, 1.0f);
-                }
-                else
-                {
-                    verticalInput = 0.0f;
-                }
+                verticalInput = Random.Range(0.25f, 1.0f);
+            }
+            else
+            {
+                verticalInput = 0.0f;
             }
 
             // should we shoot
@@ -322,11 +338,14 @@ public class RocketSphereAI : NetworkBehaviour
             verticalInput = copyPlayerInverted * Input.GetAxis("Vertical");
         }
 
+        */
+
         // should
         // left and right rotation is controlled by the horizontal joystick axis
         rotation = horizontalInput * rotationSpeed * Time.deltaTime;
 
         Quaternion turn = Quaternion.Euler(0f, 0f, -rotation);
+        if (!rb) return;
         rb.MoveRotation(rb.rotation * turn);
 
         // forward momentum is controlled by the verticle joystick axis

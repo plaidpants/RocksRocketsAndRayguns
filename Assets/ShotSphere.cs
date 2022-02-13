@@ -9,9 +9,10 @@ public class ShotSphere : NetworkBehaviour
     public GameObject shotPrefab;
     GameObject shot;
     public GameObject explosionPrefab;
-    public int shooterColorIndex = -10; // used to keep track of the player who shot this shot
+    //public int shooterColorIndex = -10; // used to keep track of the player who shot this shot
     public float lifeTime = 1.5f;
     bool destroyed = false;
+    public GameObject shooter; // who shot the shot
 
     public override void OnStartServer()
     {
@@ -42,18 +43,11 @@ public class ShotSphere : NetworkBehaviour
     [ServerCallback]
     void OnTriggerEnter(Collider other)
     {
-        // get the collider rocket if it exists
-        RocketSphere rocket = other.attachedRigidbody.GetComponent<RocketSphere>();
-
-        // have we collided with a rocket
-        if (rocket)
+        // check if we are running into our own shots
+        if (other.transform.gameObject == transform.gameObject)
         {
-            // check if we are running into our own shots
-            if (rocket.rocketColorIndex == shooterColorIndex)
-            {
-                // ignore our own shots
-                return;
-            }
+            // ignore our own shots
+            return;
         }
 
         // don't destroy ourself more than once

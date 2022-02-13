@@ -46,6 +46,7 @@ public class RocketSphere : NetworkBehaviour
     [SyncVar] Color RocketColor = Color.white;
     [SyncVar] bool visible = false;
     [SyncVar] Quaternion rot2Save = Quaternion.identity;
+    [SyncVar] public int points = 0;
 
     //bool isSpawning = false;
 
@@ -252,12 +253,27 @@ public class RocketSphere : NetworkBehaviour
 
         ShotSphere shot = other.attachedRigidbody.GetComponent<ShotSphere>();
 
+        // did a shot hit us
         if (shot)
         {
-            if (shot.shooterColorIndex == rocketColorIndex)
+            if (shot.shooter == transform.gameObject)
             {
-                // ignore our own shots
+                // ignore getting hit with our own shots
                 return;
+            }
+
+            // did we get shot by another player, give them some points
+            RocketSphere rocketPlayer = shot.shooter.GetComponent<RocketSphere>();
+            if (rocketPlayer)
+            {
+                rocketPlayer.points++;
+            }
+
+            // did we get shot by an AI player, give them some points
+            RocketSphereAI rocketAI = shot.shooter.GetComponent<RocketSphereAI>();
+            if (rocketAI)
+            {
+                rocketAI.points++;
             }
         }
 
@@ -284,8 +300,9 @@ public class RocketSphere : NetworkBehaviour
 
         GameObject shot = Instantiate(shotPrefab, pos, rot) as GameObject;
 
-        // save the hue of the shooter in the shot so we won't collide with it later
-        shot.GetComponent<ShotSphere>().shooterColorIndex = rocketColorIndex;
+        // save the the shooter in the shot so we won't collide with it later
+        //shot.GetComponent<ShotSphere>().shooterColorIndex = rocketColorIndex;
+        shot.GetComponent<ShotSphere>().shooter = transform.gameObject;
 
         shot.transform.rotation = transform.rotation;
         

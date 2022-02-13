@@ -68,17 +68,17 @@ public class MusicHandler : NetworkBehaviour
         // are we done shooting rocks and have not started the outro music
         if (RockSphere.destroyedRocks == totalNumberOfRocksInLevel)
         {
-            Debug.Log("done destroying rocks");
+  //          Debug.Log("done destroying rocks");
 
             // check if we already have the outro music queue or we are still playing the intro
             if (!outroQueued)
             {
-                Debug.Log("outro is not playing or queued");
+  //              Debug.Log("outro is not playing or queued");
 
                 // is there a music progression queued
                 if (musicLoops[lastMusicProgression].isPlaying && musicLoops[musicProgression].isPlaying)
                 {
-                    Debug.Log("need to stop queued music before queing outro");
+ //                   Debug.Log("need to stop queued music before queing outro");
 
                     // stop the queued music from playing
                     musicLoops[musicProgression].Stop();
@@ -103,7 +103,7 @@ public class MusicHandler : NetworkBehaviour
                 }
                 else
                 {
-                    Debug.Log("queue outro");
+ //                   Debug.Log("queue outro");
 
                     // stop the current music looping
                     musicLoops[musicProgression].loop = false;
@@ -132,7 +132,7 @@ public class MusicHandler : NetworkBehaviour
             // do we need to advance the music based on the % of rocks destroyed?
             if (musicProgression < (int)((float)RockSphere.destroyedRocks / (float)totalNumberOfRocksInLevel * (float)musicClipLoops.Length))
             {
-                Debug.Log("Music progression " + musicProgression + " rocks " + totalNumberOfRocksInLevel + " destroyed " + RockSphere.destroyedRocks);
+//                Debug.Log("Music progression " + musicProgression + " rocks " + totalNumberOfRocksInLevel + " destroyed " + RockSphere.destroyedRocks);
 
                 // turn off looping for the current music
                 musicLoops[musicProgression].loop = false;

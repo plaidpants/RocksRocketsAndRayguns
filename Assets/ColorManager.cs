@@ -8,12 +8,22 @@ public class ColorManager : NetworkBehaviour
 {
     public Color[] Colors;
     public bool[] colorInUse;
+    static bool exists = false;
 
     // Start is called before the first frame update
     void Start()
     {
-        // Keep the color manager through level changes
-        DontDestroyOnLoad(this);
+        if (!exists)
+        {
+            exists = true;
+            // Keep the color manager through level changes
+            DontDestroyOnLoad(this);
+        }
+        else
+        {
+            // we only need one of these, destory ourselves
+            NetworkManager.Destroy(transform.gameObject);
+        }
     }
 
     public Color GetColor(int colorIndex)

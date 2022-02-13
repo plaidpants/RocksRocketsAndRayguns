@@ -94,6 +94,26 @@ public class RockSphere : NetworkBehaviour
     {
         if (destroyed == false)
         {
+            ShotSphere shot = other.attachedRigidbody.GetComponent<ShotSphere>();
+
+            // did the rock get hit with a shot
+            if (shot)
+            {
+                // did a player shoot us, give them some points
+                RocketSphere rocketPlayer = shot.shooter.GetComponent<RocketSphere>();
+                if (rocketPlayer)
+                {
+                    rocketPlayer.points++;
+                }
+
+                // did an AI shoot us, give them some points
+                RocketSphereAI rocketAI = shot.shooter.GetComponent<RocketSphereAI>();
+                if (rocketAI)
+                {
+                    rocketAI.points++;
+                }
+            }
+
             GameObject explosion = Instantiate(explosionPrefab, rock.transform.position, Quaternion.identity) as GameObject;
             NetworkServer.Spawn(explosion);
 
