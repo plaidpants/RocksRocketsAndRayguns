@@ -39,8 +39,8 @@ public class RocketAIAgent : Agent
 
         if (rocket)
         {
-            rocket.horizontalInput = 2f * Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f);
-            rocket.verticalInput = 2f * Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f);
+            rocket.horizontalInput = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f);
+            rocket.verticalInput = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f);
             rocket.fireInput = actionBuffers.ContinuousActions[2] > 0.0f;
 
             if (rocket.points > lastPoints)
@@ -83,9 +83,9 @@ public class RocketAIAgent : Agent
         base.Heuristic(actionsOut);
 
         var continuousActionsOut = actionsOut.ContinuousActions;
-        continuousActionsOut[0] = -Input.GetAxis("Horizontal");
+        continuousActionsOut[0] = Input.GetAxis("Horizontal");
         continuousActionsOut[1] = Input.GetAxis("Vertical");
-        if (Input.GetButton("Fire"))
+        if (Input.GetButtonDown("Fire"))
         {
             continuousActionsOut[2] = 1.0f;
         }

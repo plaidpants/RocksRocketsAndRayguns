@@ -1,5 +1,6 @@
 using Mirror;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [AddComponentMenu("")]
 public class NetworkManagerRocket : NetworkManager
@@ -50,7 +51,7 @@ public class NetworkManagerRocket : NetworkManager
         level++;
 
         // we only have six levels
-        if (level > 6)
+        if (level > SceneManager.sceneCountInBuildSettings)
         {
             level = 1;
         }

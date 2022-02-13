@@ -52,6 +52,10 @@ public class RocketSphereAI : NetworkBehaviour
         }
     }
 
+
+    [SyncVar] public Vector3 pos = Vector3.zero;
+    [SyncVar] public Quaternion rot = Quaternion.identity;
+
     public override void OnStartServer()
     {
         // call the base function, important, odd behavior when connecting when not on same start scene
@@ -72,15 +76,20 @@ public class RocketSphereAI : NetworkBehaviour
         // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
 
-        //radius = transform.position.magnitude;
+        // get the distance from the center
+        radius = transform.position.magnitude;
 
-        //reset the position back to the center
+        // get the current rotation from the parent position
+        transform.rotation = Quaternion.FromToRotation(Vector3.forward, transform.position);
+
+        // reset the parent position back to the center
         transform.position = Vector3.zero;
-        transform.rotation = Quaternion.identity;
 
-        // Move rocket child gameobject out to radius
-        rocket.transform.position = Vector3.forward * radius;
-        rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
+        // Move rocket child gameobject out to radius in local coords
+        rocket.transform.localPosition = Vector3.forward * radius;
+
+        // rotations is handled by the parent
+        rocket.transform.localRotation = Quaternion.identity; //Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
 
         rocket.SetActive(true);
     }
@@ -93,29 +102,21 @@ public class RocketSphereAI : NetworkBehaviour
         // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
 
-        //radius = transform.position.magnitude;
-
         // find the engine child object and attach the particle generator
-        GameObject engine = transform.Find("Rocket").Find("Engine").gameObject;
-        engineParticleSystem = engine.GetComponent<ParticleSystem>();
+        engineParticleSystem = rocket.transform.Find("Engine").GetComponent<ParticleSystem>();
         emissionModule = engineParticleSystem.emission;
         mainModule = engineParticleSystem.main;
-        engineSound = transform.Find("Rocket").transform.GetComponent<AudioSource>();
+        // get the engine audio source
+        engineSound = rocket.transform.GetComponent<AudioSource>();
 
         // find the rb so we can apply torque during the Update()
         rb = transform.GetComponent<Rigidbody>();
 
-        //reset the position back to the center
-        transform.position = Vector3.zero;
-        transform.rotation = Quaternion.identity;
-
-        // Move rocket child gameobject out to radius
-        rocket.transform.position = Vector3.forward * radius;
-        rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
-
         // update the color to match the color on the server
         if (cachedMaterial == null)
+        {
             cachedMaterial = rocket.GetComponent<Renderer>().material;
+        }
         cachedMaterial.color = RocketColor;
     }
 
@@ -173,7 +174,6 @@ public class RocketSphereAI : NetworkBehaviour
         GameObject shot = Instantiate(shotPrefab, pos, rot) as GameObject;
 
         // save the the shooter in the shot so we won't collide with it later
-        //shot.GetComponent<ShotSphere>().shooterColorIndex = rocketAIColorIndex;
         shot.GetComponent<ShotSphere>().shooter = transform.gameObject;
 
         shot.transform.rotation = transform.rotation;
