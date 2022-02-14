@@ -46,14 +46,14 @@ public class RocketAIAgent : Agent
             if (rocket.points > lastPoints)
             {
                 // reward if we hit something
-                SetReward(0.1f);
+                SetReward(0.1f * (rocket.points - lastPoints));
                 lastPoints = rocket.points;
             }
 
             if (rocket.fireInput)
             {
                 // don't reward excesive shooting
-                SetReward(-0.01f);
+                SetReward(-0.001f);
             }
         }
     }

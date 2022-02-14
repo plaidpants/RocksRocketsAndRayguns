@@ -99,18 +99,22 @@ public class RockSphere : NetworkBehaviour
             // did the rock get hit with a shot
             if (shot)
             {
-                // did a player shoot us, give them some points
-                RocketSphere rocketPlayer = shot.shooter.GetComponent<RocketSphere>();
-                if (rocketPlayer)
+                // does the shot have the shooter set so we can reward them
+                if (shot.shooter)
                 {
-                    rocketPlayer.points++;
-                }
+                    // did a player shoot us, give them some points
+                    RocketSphere rocketPlayer = shot.shooter.GetComponent<RocketSphere>();
+                    if (rocketPlayer)
+                    {
+                        rocketPlayer.points++;
+                    }
 
-                // did an AI shoot us, give them some points
-                RocketSphereAI rocketAI = shot.shooter.GetComponent<RocketSphereAI>();
-                if (rocketAI)
-                {
-                    rocketAI.points++;
+                    // did an AI shoot us, give them some points
+                    RocketSphereAI rocketAI = shot.shooter.GetComponent<RocketSphereAI>();
+                    if (rocketAI)
+                    {
+                        rocketAI.points++;
+                    }
                 }
             }
 
