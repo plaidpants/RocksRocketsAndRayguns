@@ -74,8 +74,11 @@ public class NetworkManagerRocket : NetworkManager
             // are we done destorying rocks
             if (RockSphere.currentRocks == 0)
             {
-                // go to next level
-                NextLevel();
+                if (!SceneManager.GetActiveScene().name.Contains("Training"))
+                {
+                    // go to next level
+                    NextLevel();
+                }
             }
         }
 

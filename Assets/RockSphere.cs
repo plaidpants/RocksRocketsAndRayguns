@@ -69,6 +69,9 @@ public class RockSphere : NetworkBehaviour
         // ???? note this could be pointing right at us or away so no torque would be added need to catch this and get a new torque
         rb.AddTorque(Vector3.Cross(torque, pos.normalized));
 
+        // add some rotation to the rock
+        //rb.AddTorque(new Vector3(0,10,0));
+
         totalRocks++;
         currentRocks++;
 

@@ -25,8 +25,13 @@ public class RocketSphereAI : NetworkBehaviour
     float copyPlayerInverted = 1.0f;
     bool copyPlayer = false;
     float shotTimer = 0.0f;
-    float shotTimerExpired = 1.0f;
+    float shotTimerExpired = 0.0f;
+    public float shotDelay = 0.1f;
+    bool fireInputReleased = true;
     [SyncVar] public int points = 0;
+    public bool trackRocketAI = true;
+    bool destroyed = false;
+    public float lifeTime = 60.0f;
 
     public GameObject explosionPrefab;
     Rigidbody rb;
@@ -89,9 +94,26 @@ public class RocketSphereAI : NetworkBehaviour
         rocket.transform.localPosition = Vector3.forward * radius;
 
         // rotations is handled by the parent
-        rocket.transform.localRotation = Quaternion.identity; //Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
+        rocket.transform.localRotation = Quaternion.identity;
 
         rocket.SetActive(true);
+
+        // this object is short lived
+        Invoke(nameof(DestroySelf), lifeTime);
+    }
+
+    // destroy for everyone on the server
+    [Server]
+    void DestroySelf()
+    {
+        // don't destroy ourself more than once
+        if (destroyed == false)
+        {
+            transform.gameObject.GetComponent<RocketAIAgent>().EpisodeEndGood();
+
+            destroyed = true;
+            NetworkServer.Destroy(gameObject);
+        }
     }
 
     public override void OnStartClient()
@@ -111,6 +133,14 @@ public class RocketSphereAI : NetworkBehaviour
 
         // find the rb so we can apply torque during the Update()
         rb = transform.GetComponent<Rigidbody>();
+
+        //if (trackRocketAI)
+        {
+            if (Camera.main.GetComponent<CameraFollowRocket>().player == null)
+            {
+                Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
+            }
+        }
 
         // update the color to match the color on the server
         if (cachedMaterial == null)
@@ -159,9 +189,10 @@ public class RocketSphereAI : NetworkBehaviour
         NetworkServer.Spawn(explosion);
 
         // let the AI know we finished
-        transform.gameObject.GetComponent<RocketAIAgent>().EpisodeEnd();
+        transform.gameObject.GetComponent<RocketAIAgent>().EpisodeEndBad();
 
         // destory the ship on all clients
+        destroyed = true;
         NetworkServer.Destroy(transform.gameObject);
     }
 
@@ -373,21 +404,18 @@ public class RocketSphereAI : NetworkBehaviour
                 RpcEngineOff();
             }
         }
-
-        if (fireInput == true)
+ 
+        if (fireInput == false)
         {
-            // update the timer
-            shotTimer += Time.deltaTime;
-            
-            if (shotTimer > shotTimerExpired)
-            {
-                //fireInput = false; // only fire once
-                Fire();
+            fireInputReleased = true;
+        }
 
-                // update the time, important to subtract the last timer value instead of reseting to zero
-                // as we make not have expired the time at precisely the timer period
-                shotTimer = shotTimer - shotTimerExpired;
-            }
+        shotTimer += Time.deltaTime;
+        if ((fireInput == true) && (fireInputReleased == true) && (shotTimer >= shotTimerExpired))
+        {
+            fireInputReleased = false;
+            shotTimerExpired = shotTimer + shotDelay; // set new shot timer expiration based on current shot timer + the shot delay
+            Fire();
         }
     }
 }

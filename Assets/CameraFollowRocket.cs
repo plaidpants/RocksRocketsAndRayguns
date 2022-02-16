@@ -56,9 +56,12 @@ public class CameraFollowRocket : MonoBehaviour
 
         if (player.transform && player.gameObject.activeSelf)
         {
-            Quaternion rot = Quaternion.LookRotation(player.position);
+            if (player.position != Vector3.zero)
+            {
+                Quaternion rot = Quaternion.LookRotation(player.position);
 
-            transform.rotation = Quaternion.Slerp(this.transform.rotation, rot, Time.deltaTime * rotSpeed * 0.1f);
+                transform.rotation = Quaternion.Slerp(this.transform.rotation, rot, Time.deltaTime * rotSpeed * 0.1f);
+            }
         }
         else
         {

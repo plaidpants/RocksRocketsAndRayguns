@@ -28,6 +28,10 @@ public class ColorManager : NetworkBehaviour
 
     public Color GetColor(int colorIndex)
     {
+        if (colorIndex < 0)
+        {
+            return Color.white;
+        }
         // return the actual color associated with this color index
         return Colors[colorIndex];
     }
@@ -35,7 +39,10 @@ public class ColorManager : NetworkBehaviour
     [Server]
     public void ReleaseColorIndex(int colorIndex)
     {
-        colorInUse[colorIndex] = false;
+        if (colorIndex >= 0)
+        {
+            colorInUse[colorIndex] = false;
+        }
     }
 
     [Server]

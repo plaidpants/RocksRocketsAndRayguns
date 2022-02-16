@@ -98,13 +98,25 @@ public class RocketSphere : NetworkBehaviour
         // Find the rocket child object
         rocket = transform.Find("Rocket").gameObject;
 
-        //reset the position back to the center
+        // get the distance from the center
+        radius = transform.position.magnitude;
+
+        // get the current rotation from the parent position
+        transform.rotation = Quaternion.FromToRotation(Vector3.forward, transform.position);
+
+        // reset the position back to the center
         transform.position = Vector3.zero;
-        transform.rotation = Quaternion.identity;
+        //transform.rotation = Quaternion.identity;
+
+        // Move rocket child gameobject out to radius in local coords
+        rocket.transform.localPosition = Vector3.forward * radius;
+
+        // rotations is handled by the parent
+        rocket.transform.localRotation = Quaternion.identity; 
 
         // Move rocket child gameobject out to radius
-        rocket.transform.position = Vector3.forward * radius;
-        rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
+        //rocket.transform.position = Vector3.forward * radius;
+        //rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
     }
 
     // Use this for initialization
@@ -125,23 +137,23 @@ public class RocketSphere : NetworkBehaviour
         rocket = transform.Find("Rocket").gameObject;
 
         // find the engine child object and attach the particle generator
-        GameObject engine = transform.Find("Rocket").Find("Engine").gameObject;
+        GameObject engine = rocket.transform.Find("Engine").gameObject;
         engineParticleSystem = engine.GetComponent<ParticleSystem>();
         emissionModule = engineParticleSystem.emission;
         mainModule = engineParticleSystem.main;
-        engineSound = transform.Find("Rocket").transform.GetComponent<AudioSource>();
+        engineSound = rocket.transform.GetComponent<AudioSource>();
         hyperspaceSound = transform.GetComponent<AudioSource>();
 
         // find the rb so we can apply torque during the Update()
         rb = transform.GetComponent<Rigidbody>();
 
         //reset the position back to the center
-        transform.position = Vector3.zero;
-        transform.rotation = Quaternion.identity;
+        //transform.position = Vector3.zero;
+        //transform.rotation = Quaternion.identity;
 
         // Move rocket child gameobject out to radius
-        rocket.transform.position = Vector3.forward * radius;
-        rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
+        //rocket.transform.position = Vector3.forward * radius;
+        //rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
 
         // Keep the player objects through level changes
         DontDestroyOnLoad(this);
@@ -165,7 +177,7 @@ public class RocketSphere : NetworkBehaviour
         {
             // not our rocket so we need to update the state based on the server sync var state
             rocket.SetActive(visible);
-            transform.rotation = rot2Save;
+            //transform.rotation = rot2Save;
         }
     }
 

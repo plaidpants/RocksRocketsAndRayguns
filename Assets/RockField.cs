@@ -14,6 +14,8 @@ public class RockField : NetworkBehaviour
     public float minSpawnTimer = 10.0f;
     public float maxSpawnTimer = 30.0f;
     public bool contineSpawningRocks = false;
+    public int maxShips = 10;
+    public int maxRocks = 10;
 
     float timer = 0.0f;
     float timerExpired = 1.0f;
@@ -57,7 +59,7 @@ public class RockField : NetworkBehaviour
             RocketSphereAI[] objects = FindObjectsOfType<RocketSphereAI>();
 
             // only spawn an AI rocket if there isn't one already spawned
-            if (objects.Length < 10 && Alien)
+            if ((objects.Length < maxShips) && Alien)
             {
                 Vector3 pos = Random.onUnitSphere * radius;
                 Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
@@ -69,7 +71,7 @@ public class RockField : NetworkBehaviour
             RockSphere[] Rocks = FindObjectsOfType<RockSphere>();
 
             // only spawn the ai rocket at the end of a level
-            if (Rocks.Length < 10 && RockSpherePrefab)
+            if (Rocks.Length < maxRocks && RockSpherePrefab)
             {
                 if (contineSpawningRocks && isServer)
                 {
