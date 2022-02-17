@@ -31,7 +31,7 @@ public class RocketSphereAI : NetworkBehaviour
     [SyncVar] public int points = 0;
     public bool trackRocketAI = true;
     bool destroyed = false;
-    public float lifeTime = 60.0f;
+    public float lifeTime = 120.0f;
 
     public GameObject explosionPrefab;
     Rigidbody rb;
@@ -136,7 +136,7 @@ public class RocketSphereAI : NetworkBehaviour
 
         //if (trackRocketAI)
         {
-            if (Camera.main.GetComponent<CameraFollowRocket>().player == null)
+            if ((Camera.main.GetComponent<CameraFollowRocket>().player == null) || (Camera.main.GetComponent<CameraFollowRocket>().player == Camera.main.transform))
             {
                 Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
             }
