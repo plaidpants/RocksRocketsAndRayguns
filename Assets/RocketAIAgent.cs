@@ -11,15 +11,14 @@ public class RocketAIAgent : Agent
 {
     RocketSphereAI rocket;
     int lastPoints = 0;
-    RayPerceptionSensorComponent3D sensor;
+    int lastCountRotations = 0;
+    RayPerceptionSensorComponent3D raySensor;
     Rigidbody rb;
-    float lastRotation = 0;
-    public int countRotations = 0;
 
     public override void Initialize()
     {
         base.Initialize();
-
+        
         lastPoints = 0;
     }
 
@@ -29,30 +28,51 @@ public class RocketAIAgent : Agent
 
         if (rocket)
         {
+            //sensor.AddObservation(transform.rotation.eulerAngles); // ship on the sphere
+
+            /*
             sensor.AddObservation(transform.rotation.eulerAngles.x); // ship on the sphere
             sensor.AddObservation(transform.rotation.eulerAngles.y); // ship on the sphere
             sensor.AddObservation(transform.rotation.eulerAngles.z); // ship rotation
+            */
 
-            sensor.AddObservation(transform.rotation.w); // ship rotation
-            sensor.AddObservation(transform.rotation.x); // ship rotation
-            sensor.AddObservation(transform.rotation.y); // ship rotation
-            sensor.AddObservation(transform.rotation.z); // ship rotation
+            //sensor.AddObservation(transform.rotation); // ship rotation
 
+            /*
+             sensor.AddObservation(transform.rotation.w); // ship rotation
+             sensor.AddObservation(transform.rotation.x); // ship rotation
+             sensor.AddObservation(transform.rotation.y); // ship rotation
+             sensor.AddObservation(transform.rotation.z); // ship rotation
+             */
+
+            //sensor.AddObservation(transform.position); // ship coords
+            /*
             sensor.AddObservation(transform.position.x); // ship coords
             sensor.AddObservation(transform.position.y); // ship coords
             sensor.AddObservation(transform.position.z); // ship coords
-
+            */
             //Debug.Log("transform x " + transform.rotation.eulerAngles.x + " y " + transform.rotation.eulerAngles.y + " z " + transform.rotation.eulerAngles.z);
 
+            sensor.AddObservation(rb.angularVelocity);
+
+            //sensor.AddObservation(raySensor.RaySensor.);
+            /*
             sensor.AddObservation(rb.angularVelocity.x);
             sensor.AddObservation(rb.angularVelocity.y);
             sensor.AddObservation(rb.angularVelocity.z);
+            */
+            //sensor.AddObservation(rb.angularVelocity.magnitude);
+
+            //sensor.AddObservation(rocket.countRotations);
+
             //Debug.Log("angularVelocity x " + rb.angularVelocity.x + " y " + rb.angularVelocity.y + " z " + rb.angularVelocity.z);
         }
     }
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
+        float reward = 0.0f;
+
         base.OnActionReceived(actionBuffers);
 
         RocketSphereAI rocket = transform.gameObject.GetComponent<RocketSphereAI>();
@@ -60,12 +80,12 @@ public class RocketAIAgent : Agent
         if (rocket)
         {
             rocket.horizontalInput = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f);
-            // reward rotations
-            SetReward(0.001f * Mathf.Abs(rocket.horizontalInput));
- 
+            // little reward turning
+            //SetReward(0.001f * Mathf.Abs(rocket.horizontalInput));
+
             rocket.verticalInput = Mathf.Clamp(actionBuffers.ContinuousActions[1], 0f, 1f);
-            // reward moving forward
-            SetReward(0.001f * rocket.verticalInput);
+            // little reward thrusting
+            //SetReward(0.001f * rocket.verticalInput);
 
             if (actionBuffers.ContinuousActions[2] > 0.0f)
             {
@@ -78,63 +98,172 @@ public class RocketAIAgent : Agent
 
             if (rocket.points > lastPoints)
             {
-                // reward if we hit something
-                SetReward(3.0f * (rocket.points - lastPoints));
-                Debug.Log("Reward for points " + rocket.points + " last points " + lastPoints + " reward " + 0.5f * (rocket.points - lastPoints));
+                // big reward if we hit something
+                reward = 3.0f * (rocket.points - lastPoints);
+                SetReward(reward);
+                Debug.Log("Reward for points " + rocket.points + " last points " + lastPoints + " reward " + reward);
                 lastPoints = rocket.points;
             }
 
+            /*
             if (rocket.fireInput)
             {
                 // little reward for shooting
-                SetReward(0.01f);
-                //Debug.Log("Reward shooting " + 0.001f);
+                reward = 0.01f;
+                SetReward(reward);
+                //Debug.Log("Reward for shooting " + reward);
             }
-        }
-
-        if (sensor)
-        {
-            if (sensor.DetectableTags.Count > 0)
+            else
             {
-                // reward being near something
-                SetReward(0.01f * sensor.DetectableTags.Count);
-                //Debug.Log("Reward for being near something " + sensor.DetectableTags.Count + " reward " + 0.001f);
+                // little negative reward for not shooting
+                reward = -0.001f;
+                SetReward(reward);
+                //Debug.Log("little negative reward for not shooting " + reward);
             }
+            */
         }
 
-        if (lastRotation - transform.rotation.eulerAngles.z > 250)
+ 
+        if (rocket.countRotations != lastCountRotations)
         {
-            countRotations++;
+            // negative reward for excessive rotations
+            reward = -0.01f * math.abs(rocket.countRotations);
+            SetReward(reward);
+            if (reward < -0.1f)
+            {
+                //Debug.Log("Negative reward for excessive rotations " + rocket.countRotations + " reward " + reward);
+            }
+
+            lastCountRotations = rocket.countRotations;
         }
-
-        if (transform.rotation.eulerAngles.z - lastRotation > 250)
-        {
-            countRotations--;
-        }
-
-        lastRotation = transform.rotation.eulerAngles.z;
-
-        // negative reward for excessive rotations
-        SetReward(-0.01f * math.abs(countRotations));
 
         if (rb)
         {
             if (rb.angularVelocity.magnitude < 0.02f)
             {
                 // negative reward for not moving
-                SetReward(-0.01f * (0.02f - rb.angularVelocity.magnitude));
+                reward = -0.01f * (0.02f - rb.angularVelocity.magnitude);
+                SetReward(reward);
+                //Debug.Log("Negative Reward for not moving " + rb.angularVelocity.magnitude + " reward " + reward);
             }
-            if ((rb.angularVelocity.magnitude >= 0.02f) && (rb.angularVelocity.magnitude <= 0.2f))
+
+            if ((rb.angularVelocity.magnitude >= 0.02f) && (rb.angularVelocity.magnitude <= 0.5f))
             {
                 // reward for moving
-                SetReward(0.01f * (rb.angularVelocity.magnitude - 0.02f));
-                //Debug.Log("Reward for moving " + 0.001f);
+                reward = 0.01f * (rb.angularVelocity.magnitude - 0.02f);
+                SetReward(reward);
+                //Debug.Log("Reward for moving " + rb.angularVelocity.magnitude + " reward " + reward);
             }
-            if (rb.angularVelocity.magnitude > 0.2f)
+
+            if (rb.angularVelocity.magnitude > 0.5f)
             {
                 // negative reward for moving too fast
-                SetReward(0.01f * (0.2f - 0.02f + 0.2f - rb.angularVelocity.magnitude));
+                reward = 0.01f * 2.0f * (2.0f * 0.5f - rb.angularVelocity.magnitude);
+                if (reward > 0.0f)
+                {
+                    //Debug.Log("Decreasing reward for moving " + rb.angularVelocity.magnitude + " reward " + reward);
+                }
+                else
+                {
+                    //Debug.Log("Increasing negative Reward for moving too fast " + rb.angularVelocity.magnitude + " reward " + reward);
+                }
+                SetReward(reward);
             }
+        }
+
+        if (raySensor)
+        {
+            /*
+            if (raySensor.DetectableTags.Count > 0)
+            {
+                // reward being near something
+                reward = 0.001f * raySensor.DetectableTags.Count;
+                SetReward(reward);
+                //Debug.Log("Reward for being near something " + raySensor.DetectableTags.Count + " reward " + reward);
+            }
+            */
+
+            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[8].HasHit)
+            {
+                if (rocket.fireInput)
+                {
+                    // reward pointing the ship right at something and shooting
+                    reward = 0.2f;
+                    SetReward(reward);
+                    //Debug.Log("reward pointing the ship right at something and shooting " + reward);
+                }
+                else
+                {
+                    // negative reward for pointing the ship right at something and not shooting
+                    reward = -0.05f;
+                    SetReward(reward);
+                    //Debug.Log("negative reward for pointing the ship right at something and not shooting " + reward);
+                }
+            }
+            else if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[6].HasHit || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[10].HasHit)
+            {
+                if (rocket.fireInput)
+                {
+                    // reward pointing the ship at something and shooting
+                    reward = 0.1f;
+                    SetReward(reward);
+                    //Debug.Log("reward pointing the ship at something and shooting " + reward);
+                }
+                else
+                {
+                    // negative reward for pointing the ship at something and not shooting
+                    reward = -0.025f;
+                    SetReward(reward);
+                    //Debug.Log("negative reward for pointing the ship at something and not shooting " + reward);
+                }
+            }
+
+            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[7].HasHit 
+                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[9].HasHit 
+                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[11].HasHit)
+            {
+                if (rocket.verticalInput > 0.2f)
+                {
+                    // reward for thrusting away from something
+                    reward = 0.01f;
+                    SetReward(reward);
+                    //Debug.Log("reward thrusting away from something " + reward);
+                }
+                else
+                {
+                    // negative reward for not thrusting away from something
+                    reward = -0.01f;
+                    SetReward(reward);
+                    //Debug.Log("reward thrusting away from something " + reward);
+                }
+            }
+            
+            /*
+            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[0].HasHit 
+                ||  raySensor.RaySensor.RayPerceptionOutput.RayOutputs[1].HasHit
+                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[2].HasHit
+                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[3].HasHit
+                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[13].HasHit
+                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[14].HasHit
+                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[15].HasHit
+                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[16].HasHit)
+            {
+                if (rocket.horizontalInput > 0.2f)
+                {
+                    // reward turning either away from or towards something on the side
+                    reward = 0.01f;
+                    SetReward(reward);
+                    //Debug.Log("reward turning either away from or towards something " + reward);
+                }
+                else
+                {
+                    // negative reward for not turning when something is on the side
+                    reward = -0.01f;
+                    SetReward(reward);
+                    //Debug.Log("negative reward for not turning when something is on the side " + reward);
+                }
+            }
+            */
         }
     }
 
@@ -142,9 +271,10 @@ public class RocketAIAgent : Agent
     {
         base.OnEpisodeBegin();
 
-        sensor = transform.gameObject.GetComponent<RayPerceptionSensorComponent3D>();
+        raySensor = transform.gameObject.GetComponentInChildren<RayPerceptionSensorComponent3D>();
         rocket = transform.gameObject.GetComponent<RocketSphereAI>();
         rb = transform.gameObject.GetComponent<Rigidbody>();
+
         if (rocket)
         {
             lastPoints = rocket.points;
@@ -157,14 +287,14 @@ public class RocketAIAgent : Agent
 
     public void EpisodeEndGood()
     {
-        Debug.Log("survived for lifetime " + 0.2f);
+        Debug.Log("reward survived for lifetime " + 0.2f);
         SetReward(0.2f);
         EndEpisode();
     }
 
     public void EpisodeEndBad()
     {
-        Debug.Log("Reward for dying " + -1.0f);
+        Debug.Log("Negative reward for dying " + -1.0f);
         SetReward(-1.0f);
         EndEpisode();
     }

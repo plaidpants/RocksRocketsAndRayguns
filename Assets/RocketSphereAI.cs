@@ -32,6 +32,8 @@ public class RocketSphereAI : NetworkBehaviour
     public bool trackRocketAI = true;
     bool destroyed = false;
     public float lifeTime = 120.0f;
+    float lastRotation = 0;
+    public int countRotations = 0;
 
     public GameObject explosionPrefab;
     Rigidbody rb;
@@ -416,6 +418,42 @@ public class RocketSphereAI : NetworkBehaviour
             fireInputReleased = false;
             shotTimerExpired = shotTimer + shotDelay; // set new shot timer expiration based on current shot timer + the shot delay
             Fire();
+        }
+
+        if (lastRotation - transform.rotation.eulerAngles.z > 250)
+        {
+            countRotations++;
+        }
+
+        if (transform.rotation.eulerAngles.z - lastRotation > 250)
+        {
+            countRotations--;
+        }
+
+        lastRotation = transform.rotation.eulerAngles.z;
+
+        // too many rotations
+        if (Mathf.Abs(countRotations) > 20)
+        {
+            // let the AI know we finished
+            transform.gameObject.GetComponent<RocketAIAgent>().EpisodeEndBad();
+            Debug.Log("Killed for spinning");
+
+            // destory the ship on all clients
+            destroyed = true;
+            NetworkServer.Destroy(transform.gameObject);
+        }
+
+        // too fast
+        if (rb.angularVelocity.magnitude > 1.0f)
+        {
+            // let the AI know we finished
+            transform.gameObject.GetComponent<RocketAIAgent>().EpisodeEndBad();
+
+            Debug.Log("Killed for going to fast");
+            // destory the ship on all clients
+            destroyed = true;
+            NetworkServer.Destroy(transform.gameObject);
         }
     }
 }
