@@ -26,6 +26,8 @@ obj/
 *.booproj
 .vs/
 *.sdf
+.vscode
+.vsconfig
 
 # ============ #
 # OS generated #

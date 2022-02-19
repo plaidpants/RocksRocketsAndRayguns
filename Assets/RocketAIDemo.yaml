@@ -36,13 +36,13 @@ behaviors:
         learning_rate: 0.0003
         use_actions: false
         use_vail: false
-        demo_path: 'J:\Unity Projects\RocksRocketsAndRayguns\Assets\Demonstrations\RocketAI_0.demo'
+        demo_path: 'J:\Unity Projects\RocksRocketsAndRayguns\Assets\Demonstrations\'
     keep_checkpoints: 5
     max_steps: 10000000
     time_horizon: 2000
     summary_freq: 10000
     behavioral_cloning:
-      demo_path: 'J:\Unity Projects\RocksRocketsAndRayguns\Assets\Demonstrations\RocketAI_0.demo'
-      steps: 1000
+      demo_path: 'J:\Unity Projects\RocksRocketsAndRayguns\Assets\Demonstrations\'
+      steps: 20000
       strength: 1.0
       samples_per_update: 0
