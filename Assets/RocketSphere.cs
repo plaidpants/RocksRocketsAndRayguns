@@ -45,7 +45,7 @@ public class RocketSphere : NetworkBehaviour
     Rigidbody rb;
     [SyncVar] Color RocketColor = Color.white;
     [SyncVar] bool visible = false;
-    [SyncVar] Quaternion rot2Save = Quaternion.identity;
+    //[SyncVar] Quaternion rot2Save = Quaternion.identity;
     [SyncVar] public int points = 0;
 
     //bool isSpawning = false;
@@ -53,6 +53,9 @@ public class RocketSphere : NetworkBehaviour
     // Unity makes a clone of the Material every time GetComponent<Renderer>().material is used.
     // Cache it here and Destroy it in OnDestroy to prevent a memory leak.
     Material cachedMaterial;
+
+    [SyncVar] public Vector3 pos = Vector3.zero;
+    [SyncVar] public Quaternion rot = Quaternion.identity;
 
     void OnDestroy()
     {
@@ -109,10 +112,10 @@ public class RocketSphere : NetworkBehaviour
         //transform.rotation = Quaternion.identity;
 
         // Move rocket child gameobject out to radius in local coords
-        rocket.transform.localPosition = Vector3.forward * radius;
+        pos = rocket.transform.localPosition = Vector3.forward * radius;
 
         // rotations is handled by the parent
-        rocket.transform.localRotation = Quaternion.identity; 
+        rot = rocket.transform.localRotation = Quaternion.identity;
 
         // Move rocket child gameobject out to radius
         //rocket.transform.position = Vector3.forward * radius;
@@ -155,12 +158,19 @@ public class RocketSphere : NetworkBehaviour
         //rocket.transform.position = Vector3.forward * radius;
         //rocket.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
 
+        // move the child rock to original location and rotation from the syncvars since mirror will not do this for us
+        // the rock has moved since creation for clients connecting mid-game, offset is in local coords
+        rocket.transform.localPosition = pos;
+        rocket.transform.localRotation = rot;
+        // update position based on current radius in case we have hyperspaced after initial save of position.
+        rocket.transform.position = transform.rotation * Vector3.forward * radius;
+
         // Keep the player objects through level changes
         DontDestroyOnLoad(this);
 
         // attach the PC camera follow script to the local player so PC players can play with the VR players
         if (isLocalPlayer)
-            Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
+            Camera.main.GetComponent<CameraFollowRocket>().player = rocket.transform;
 
         // update the color to match the color on the server
         if (cachedMaterial == null)
@@ -185,7 +195,7 @@ public class RocketSphere : NetworkBehaviour
     {
         // attach the PC camera follow script to the local player
         if (isLocalPlayer)
-            Camera.main.GetComponent<CameraFollowRocket>().player = transform.gameObject.transform.Find("Rocket").gameObject.transform;
+            Camera.main.GetComponent<CameraFollowRocket>().player = rocket.transform;
     }
 
     void MySetActive(bool active, Quaternion rotation, bool playhyperspace)
@@ -207,7 +217,7 @@ public class RocketSphere : NetworkBehaviour
             // put initial rotation of new spacecraft at current camera rotation so player can orient spawn position to a safe spot,
             // save it so new players know where to create the ship, if the player doesn't move
             transform.rotation = rotation;
-            rot2Save = rotation;
+            //rot2Save = rotation;
 
             // restart rb movement
             rb.isKinematic = false;
@@ -215,7 +225,6 @@ public class RocketSphere : NetworkBehaviour
             // make the rocket visible again
             rocket.SetActive(true);
             visible = true;
-
         }
 
         if (playhyperspace == true)
@@ -443,7 +452,7 @@ public class RocketSphere : NetworkBehaviour
     [Command]
     void CmdHyperspace()
     {
-        RpcHyperspace();
+         RpcHyperspace();
     }
 
     void Update()

@@ -68,44 +68,82 @@ public class MusicHandler : NetworkBehaviour
         // are we done shooting rocks and have not started the outro music
         if (RockSphere.destroyedRocks == totalNumberOfRocksInLevel)
         {
-  //          Debug.Log("done destroying rocks");
+            RockSphere[] Rocks = FindObjectsOfType<RockSphere>();
 
-            // check if we already have the outro music queue or we are still playing the intro
-            if (!outroQueued)
+            // double check that we are not spawning rocks
+            if (Rocks.Length == 0)
             {
-  //              Debug.Log("outro is not playing or queued");
+                //          Debug.Log("done destroying rocks");
 
-                // is there a music progression queued
-                if (musicLoops[lastMusicProgression].isPlaying && musicLoops[musicProgression].isPlaying)
+                // check if we already have the outro music queue or we are still playing the intro
+                if (!outroQueued)
                 {
- //                   Debug.Log("need to stop queued music before queing outro");
+                    //              Debug.Log("outro is not playing or queued");
 
-                    // stop the queued music from playing
-                    musicLoops[musicProgression].Stop();
+                    // is there a music progression queued
+                    if (musicLoops[lastMusicProgression].isPlaying && musicLoops[musicProgression].isPlaying)
+                    {
+                        //                   Debug.Log("need to stop queued music before queing outro");
 
-                    // stop the current music looping
-                    musicLoops[lastMusicProgression].loop = false;
+                        // stop the queued music from playing
+                        musicLoops[musicProgression].Stop();
 
-                    // stop the queued music from looping
-                    musicLoops[musicProgression].loop = false;
+                        // stop the current music looping
+                        musicLoops[lastMusicProgression].loop = false;
 
-                    // calculate how much of the music loop has played so far
-                    double timeElapsed = (double)musicLoops[lastMusicProgression].timeSamples / musicLoops[lastMusicProgression].clip.frequency;
+                        // stop the queued music from looping
+                        musicLoops[musicProgression].loop = false;
 
-                    // calculate what's left to play of the music loop
-                    double timeLeft = musicLoops[lastMusicProgression].clip.length - timeElapsed;
+                        // calculate how much of the music loop has played so far
+                        double timeElapsed = (double)musicLoops[lastMusicProgression].timeSamples / musicLoops[lastMusicProgression].clip.frequency;
 
-                    // don't loop the outro music
-                    outroMusic.loop = false;
+                        // calculate what's left to play of the music loop
+                        double timeLeft = musicLoops[lastMusicProgression].clip.length - timeElapsed;
 
-                    // Schedule the next music to play at the current time + the length time left in the current music
-                    outroMusic.PlayScheduled(AudioSettings.dspTime + timeLeft);
+                        // don't loop the outro music
+                        outroMusic.loop = false;
+
+                        // Schedule the next music to play at the current time + the length time left in the current music
+                        outroMusic.PlayScheduled(AudioSettings.dspTime + timeLeft);
+                    }
+                    else
+                    {
+                        //                   Debug.Log("queue outro");
+
+                        // stop the current music looping
+                        musicLoops[musicProgression].loop = false;
+
+                        // calculate how much of the music loop has played so far
+                        double timeElapsed = (double)musicLoops[musicProgression].timeSamples / musicLoops[musicProgression].clip.frequency;
+
+                        // calculate what's left to play of the music loop
+                        double timeLeft = musicLoops[musicProgression].clip.length - timeElapsed;
+
+                        // don't loop the outro music
+                        outroMusic.loop = false;
+
+                        // Schedule the next music to play at the current time + the length time left in the current music
+                        outroMusic.PlayScheduled(AudioSettings.dspTime + timeLeft);
+                    }
+
+                    outroQueued = true;
                 }
-                else
-                {
- //                   Debug.Log("queue outro");
+            }
+        }
+        // is there a progression playing and nothing queued
+        else if (musicLoops[musicProgression].isPlaying && !musicLoops[lastMusicProgression].isPlaying && !introMusic.isPlaying)
+        {
+            //Debug.Log("No music queued");
 
-                    // stop the current music looping
+            // double check we are not spawning rocks
+            if (RockSphere.destroyedRocks <= totalNumberOfRocksInLevel)
+            {
+                // do we need to advance the music based on the % of rocks destroyed?
+                if (musicProgression < (int)((float)RockSphere.destroyedRocks / (float)totalNumberOfRocksInLevel * (float)musicClipLoops.Length))
+                {
+                    //                Debug.Log("Music progression " + musicProgression + " rocks " + totalNumberOfRocksInLevel + " destroyed " + RockSphere.destroyedRocks);
+
+                    // turn off looping for the current music
                     musicLoops[musicProgression].loop = false;
 
                     // calculate how much of the music loop has played so far
@@ -114,46 +152,18 @@ public class MusicHandler : NetworkBehaviour
                     // calculate what's left to play of the music loop
                     double timeLeft = musicLoops[musicProgression].clip.length - timeElapsed;
 
-                    // don't loop the outro music
-                    outroMusic.loop = false;
+                    // save last music being played so we can make sure it finishs and the new one starts before we queue another
+                    lastMusicProgression = musicProgression;
+
+                    // increment music progression
+                    musicProgression++;
+
+                    // turn on looping for the next music
+                    musicLoops[musicProgression].loop = true;
 
                     // Schedule the next music to play at the current time + the length time left in the current music
-                    outroMusic.PlayScheduled(AudioSettings.dspTime + timeLeft);
+                    musicLoops[musicProgression].PlayScheduled(AudioSettings.dspTime + timeLeft);
                 }
-
-                outroQueued = true;
-            }
-        }
-        // is there a progression playing and nothing queued
-        else if (musicLoops[musicProgression].isPlaying && !musicLoops[lastMusicProgression].isPlaying && !introMusic.isPlaying)
-        {
-            //Debug.Log("No music queued");
-
-            // do we need to advance the music based on the % of rocks destroyed?
-            if (musicProgression < (int)((float)RockSphere.destroyedRocks / (float)totalNumberOfRocksInLevel * (float)musicClipLoops.Length))
-            {
-//                Debug.Log("Music progression " + musicProgression + " rocks " + totalNumberOfRocksInLevel + " destroyed " + RockSphere.destroyedRocks);
-
-                // turn off looping for the current music
-                musicLoops[musicProgression].loop = false;
-
-                // calculate how much of the music loop has played so far
-                double timeElapsed = (double)musicLoops[musicProgression].timeSamples / musicLoops[musicProgression].clip.frequency;
-
-                // calculate what's left to play of the music loop
-                double timeLeft = musicLoops[musicProgression].clip.length - timeElapsed;
-
-                // save last music being played so we can make sure it finishs and the new one starts before we queue another
-                lastMusicProgression = musicProgression;
-
-                // increment music progression
-                musicProgression++;
-
-                // turn on looping for the next music
-                musicLoops[musicProgression].loop = true;
-
-                // Schedule the next music to play at the current time + the length time left in the current music
-                musicLoops[musicProgression].PlayScheduled(AudioSettings.dspTime + timeLeft);
             }
         }
     }

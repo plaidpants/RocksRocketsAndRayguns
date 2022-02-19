@@ -19,11 +19,11 @@ public class RocketSphereAI : NetworkBehaviour
     public float horizontalInput = 0.0f;
     public float verticalInput = 0.0f;
     public bool fireInput = false;
-    float timer = 0.0f;
-    float timerExpired = 1.0f;
+    //float timer = 0.0f;
+    //float timerExpired = 1.0f;
     [SyncVar] public int rocketAIColorIndex = -1;
-    float copyPlayerInverted = 1.0f;
-    bool copyPlayer = false;
+    //float copyPlayerInverted = 1.0f;
+    //bool copyPlayer = false;
     float shotTimer = 0.0f;
     float shotTimerExpired = 0.0f;
     public float shotDelay = 0.1f;
