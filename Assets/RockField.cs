@@ -6,16 +6,16 @@ using UnityEngine.Networking;
 
 public class RockField : NetworkBehaviour
 {
-    public int numberOfRocks;
+    public int initialNumberOfRocksToSpawn;
     public float radius;
-    public GameObject RockSpherePrefab;
-    public GameObject Alien;
-    public int NumberOfRockLeftBeforeSpawning = 5;
+    public GameObject rockSpherePrefab;
+    public GameObject alienSpherePrefab;
+    public int numberOfRocksLeftBeforeSpawningAlien = 5;
     public float minSpawnTimer = 10.0f;
     public float maxSpawnTimer = 30.0f;
     public bool contineSpawningRocks = false;
-    public int maxShips = 10;
-    public int maxRocks = 10;
+    public int maxAlienShips = 1;
+    public int minRocks = 10;
 
     float timer = 0.0f;
     float timerExpired = 1.0f;
@@ -26,13 +26,13 @@ public class RockField : NetworkBehaviour
         base.OnStartServer();
 
         // create a bunch of rocks
-        for (int i = 0; i < numberOfRocks; i++)
+        for (int i = 0; i < initialNumberOfRocksToSpawn; i++)
         {
             //calculate random position and rotate so it faces the center
             Vector3 pos = Random.onUnitSphere * radius;
             Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
 
-            GameObject rock = Instantiate(RockSpherePrefab, pos, rot) as GameObject;
+            GameObject rock = Instantiate(rockSpherePrefab, pos, rot) as GameObject;
 
             NetworkServer.Spawn(rock);
         }
@@ -49,37 +49,40 @@ public class RockField : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
+        // extra spawning is only done on server
+        if (!isServer)
+            return;
+
         // update the timer
         timer += Time.deltaTime;
 
         // Check if we have expired the timer
         if (timer > timerExpired)
         {
-            // generate a new AI rocket
-            RocketSphereAI[] objects = FindObjectsOfType<RocketSphereAI>();
-
-            // only spawn an AI rocket if there isn't one already spawned
-            if ((objects.Length < maxShips) && Alien)
-            {
-                Vector3 pos = Random.onUnitSphere * radius;
-                Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
-                GameObject alien = Instantiate(Alien, pos, rot) as GameObject;
-                NetworkServer.Spawn(alien);
-            }
-
-            // 
             RockSphere[] Rocks = FindObjectsOfType<RockSphere>();
 
-            // only spawn the ai rocket at the end of a level
-            if (Rocks.Length < maxRocks && RockSpherePrefab)
+            // only spawn rocks when there are not enough and there is a prefab to spawn and we want to continue spawning rocks
+            if (Rocks.Length < minRocks && rockSpherePrefab && contineSpawningRocks)
             {
-                if (contineSpawningRocks && isServer)
+                //calculate random position and rotate so it faces the center
+                Vector3 pos = Random.onUnitSphere * radius;
+                Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
+                GameObject rock = Instantiate(rockSpherePrefab, pos, rot) as GameObject;
+                NetworkServer.Spawn(rock);
+            }
+
+            // only attempt to spawn aliens at the end of the level when there are less rocks but not if we finished the level
+            if ((RockSphere.destroyedRocks >= numberOfRocksLeftBeforeSpawningAlien) && (Rocks.Length != 0))
+            {
+                RocketSphereAI[] objects = FindObjectsOfType<RocketSphereAI>();
+
+                // only spawn an AI rocket if there isn't too many already spawned and we have a prefab to spawn
+                if ((objects.Length < maxAlienShips) && alienSpherePrefab)
                 {
-                    //calculate random position and rotate so it faces the center
                     Vector3 pos = Random.onUnitSphere * radius;
                     Quaternion rot = Quaternion.FromToRotation(Vector3.forward, pos);
-                    GameObject rock = Instantiate(RockSpherePrefab, pos, rot) as GameObject;
-                    NetworkServer.Spawn(rock);
+                    GameObject alien = Instantiate(alienSpherePrefab, pos, rot) as GameObject;
+                    NetworkServer.Spawn(alien);
                 }
             }
 
@@ -90,6 +93,5 @@ public class RockField : NetworkBehaviour
             // next timer check is random also
             timerExpired = Random.Range(minSpawnTimer, maxSpawnTimer);
         }
-
     }
 }

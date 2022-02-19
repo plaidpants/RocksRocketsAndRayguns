@@ -101,7 +101,7 @@ public class RocketSphereAI : NetworkBehaviour
         rocket.SetActive(true);
 
         // this object is short lived
-        Invoke(nameof(DestroySelf), lifeTime);
+        //Invoke(nameof(DestroySelf), lifeTime);
     }
 
     // destroy for everyone on the server
@@ -174,14 +174,14 @@ public class RocketSphereAI : NetworkBehaviour
                 RocketSphere playerShooter = shot.shooter.GetComponent<RocketSphere>();
                 if (playerShooter)
                 {
-                    playerShooter.points++;
+                    playerShooter.points += 2;
                 }
 
                 // did a AI shoot us, give them some points
                 RocketSphereAI rocketShooterAI = shot.shooter.GetComponent<RocketSphereAI>();
                 if (rocketShooterAI)
                 {
-                    rocketShooterAI.points++;
+                    rocketShooterAI.points += 2;
                 }
             }
         }
@@ -432,6 +432,7 @@ public class RocketSphereAI : NetworkBehaviour
 
         lastRotation = transform.rotation.eulerAngles.z;
 
+        /*
         // too many rotations
         if (Mathf.Abs(countRotations) > 20)
         {
@@ -455,5 +456,6 @@ public class RocketSphereAI : NetworkBehaviour
             destroyed = true;
             NetworkServer.Destroy(transform.gameObject);
         }
+        */
     }
 }

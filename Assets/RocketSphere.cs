@@ -268,24 +268,27 @@ public class RocketSphere : NetworkBehaviour
         // did a shot hit us
         if (shot)
         {
-            if (shot.shooter == transform.gameObject)
+            if (shot.shooter)
             {
-                // ignore getting hit with our own shots
-                return;
-            }
+                if (shot.shooter == transform.gameObject)
+                {
+                    // ignore getting hit with our own shots
+                    return;
+                }
 
-            // did we get shot by another player, give them some points
-            RocketSphere rocketPlayer = shot.shooter.GetComponent<RocketSphere>();
-            if (rocketPlayer)
-            {
-                rocketPlayer.points++;
-            }
+                // did we get shot by another player, give them some points
+                RocketSphere rocketPlayer = shot.shooter.GetComponent<RocketSphere>();
+                if (rocketPlayer)
+                {
+                    rocketPlayer.points++;
+                }
 
-            // did we get shot by an AI player, give them some points
-            RocketSphereAI rocketAI = shot.shooter.GetComponent<RocketSphereAI>();
-            if (rocketAI)
-            {
-                rocketAI.points++;
+                // did we get shot by an AI player, give them some points
+                RocketSphereAI rocketAI = shot.shooter.GetComponent<RocketSphereAI>();
+                if (rocketAI)
+                {
+                    rocketAI.points++;
+                }
             }
         }
 

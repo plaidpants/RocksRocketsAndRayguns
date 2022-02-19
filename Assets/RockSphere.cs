@@ -12,6 +12,7 @@ public class RockSphere : NetworkBehaviour
     public GameObject explosionPrefab;
     public GameObject rockSpherePrefab;
     public int pieces;
+    public int points = 1;
     //public float rotationSpeed;
     [SyncVar] public bool destroyed = false;
     [SyncVar] public float radius = 0;
@@ -109,14 +110,14 @@ public class RockSphere : NetworkBehaviour
                     RocketSphere rocketPlayer = shot.shooter.GetComponent<RocketSphere>();
                     if (rocketPlayer)
                     {
-                        rocketPlayer.points++;
+                        rocketPlayer.points += points;
                     }
 
                     // did an AI shoot us, give them some points
                     RocketSphereAI rocketAI = shot.shooter.GetComponent<RocketSphereAI>();
                     if (rocketAI)
                     {
-                        rocketAI.points++;
+                        rocketAI.points += points;
                     }
                 }
             }

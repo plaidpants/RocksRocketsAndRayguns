@@ -173,97 +173,109 @@ public class RocketAIAgent : Agent
 
         if (raySensor)
         {
-            /*
-            if (raySensor.DetectableTags.Count > 0)
+            if (raySensor.RaySensor != null)
             {
-                // reward being near something
-                reward = 0.001f * raySensor.DetectableTags.Count;
-                SetReward(reward);
-                //Debug.Log("Reward for being near something " + raySensor.DetectableTags.Count + " reward " + reward);
-            }
-            */
+                if (raySensor.RaySensor.RayPerceptionOutput != null)
+                {
+                    if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs != null)
+                    {
+                        if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs.Length > 0)
+                        {
+                            /*
+                            if (raySensor.DetectableTags.Count > 0)
+                            {
+                                // reward being near something
+                                reward = 0.001f * raySensor.DetectableTags.Count;
+                                SetReward(reward);
+                                //Debug.Log("Reward for being near something " + raySensor.DetectableTags.Count + " reward " + reward);
+                            }
+                            */
 
-            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[8].HasHit)
-            {
-                if (rocket.fireInput)
-                {
-                    // reward pointing the ship right at something and shooting
-                    reward = 0.2f;
-                    SetReward(reward);
-                    //Debug.Log("reward pointing the ship right at something and shooting " + reward);
-                }
-                else
-                {
-                    // negative reward for pointing the ship right at something and not shooting
-                    reward = -0.05f;
-                    SetReward(reward);
-                    //Debug.Log("negative reward for pointing the ship right at something and not shooting " + reward);
-                }
-            }
-            else if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[6].HasHit || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[10].HasHit)
-            {
-                if (rocket.fireInput)
-                {
-                    // reward pointing the ship at something and shooting
-                    reward = 0.1f;
-                    SetReward(reward);
-                    //Debug.Log("reward pointing the ship at something and shooting " + reward);
-                }
-                else
-                {
-                    // negative reward for pointing the ship at something and not shooting
-                    reward = -0.025f;
-                    SetReward(reward);
-                    //Debug.Log("negative reward for pointing the ship at something and not shooting " + reward);
-                }
-            }
+                            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[8].HasHit)
+                            {
+                                if (rocket.fireInput)
+                                {
+                                    // reward pointing the ship right at something and shooting
+                                    reward = 0.2f;
+                                    SetReward(reward);
+                                    //Debug.Log("reward pointing the ship right at something and shooting " + reward);
+                                }
+                                else
+                                {
+                                    // negative reward for pointing the ship right at something and not shooting
+                                    reward = -0.05f;
+                                    SetReward(reward);
+                                    //Debug.Log("negative reward for pointing the ship right at something and not shooting " + reward);
+                                }
+                            }
+                            else if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[6].HasHit || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[10].HasHit)
+                            {
+                                if (rocket.fireInput)
+                                {
+                                    // reward pointing the ship at something and shooting
+                                    reward = 0.1f;
+                                    SetReward(reward);
+                                    //Debug.Log("reward pointing the ship at something and shooting " + reward);
+                                }
+                                else
+                                {
+                                    // negative reward for pointing the ship at something and not shooting
+                                    reward = -0.025f;
+                                    SetReward(reward);
+                                    //Debug.Log("negative reward for pointing the ship at something and not shooting " + reward);
+                                }
+                            }
 
-            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[7].HasHit 
-                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[9].HasHit 
-                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[11].HasHit)
-            {
-                if (rocket.verticalInput > 0.2f)
-                {
-                    // reward for thrusting away from something
-                    reward = 0.01f;
-                    SetReward(reward);
-                    //Debug.Log("reward thrusting away from something " + reward);
-                }
-                else
-                {
-                    // negative reward for not thrusting away from something
-                    reward = -0.01f;
-                    SetReward(reward);
-                    //Debug.Log("reward thrusting away from something " + reward);
+                            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[7].HasHit
+                                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[9].HasHit
+                                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[11].HasHit)
+                            {
+                                if (rocket.verticalInput > 0.2f)
+                                {
+                                    // reward for thrusting away from something
+                                    reward = 0.01f;
+                                    SetReward(reward);
+                                    //Debug.Log("reward thrusting away from something " + reward);
+                                }
+                                else
+                                {
+                                    // negative reward for not thrusting away from something
+                                    reward = -0.01f;
+                                    SetReward(reward);
+                                    //Debug.Log("reward thrusting away from something " + reward);
+                                }
+                            }
+
+                            /*
+                            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[0].HasHit 
+                                ||  raySensor.RaySensor.RayPerceptionOutput.RayOutputs[1].HasHit
+                                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[2].HasHit
+                                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[3].HasHit
+                                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[13].HasHit
+                                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[14].HasHit
+                                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[15].HasHit
+                                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[16].HasHit)
+                            {
+                                if (rocket.horizontalInput > 0.2f)
+                                {
+                                    // reward turning either away from or towards something on the side
+                                    reward = 0.01f;
+                                    SetReward(reward);
+                                    //Debug.Log("reward turning either away from or towards something " + reward);
+                                }
+                                else
+                                {
+                                    // negative reward for not turning when something is on the side
+                                    reward = -0.01f;
+                                    SetReward(reward);
+                                    //Debug.Log("negative reward for not turning when something is on the side " + reward);
+                                }
+                            }
+                            */
+                        }
+                    }
                 }
             }
-            
-            /*
-            if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[0].HasHit 
-                ||  raySensor.RaySensor.RayPerceptionOutput.RayOutputs[1].HasHit
-                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[2].HasHit
-                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[3].HasHit
-                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[13].HasHit
-                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[14].HasHit
-                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[15].HasHit
-                || raySensor.RaySensor.RayPerceptionOutput.RayOutputs[16].HasHit)
-            {
-                if (rocket.horizontalInput > 0.2f)
-                {
-                    // reward turning either away from or towards something on the side
-                    reward = 0.01f;
-                    SetReward(reward);
-                    //Debug.Log("reward turning either away from or towards something " + reward);
-                }
-                else
-                {
-                    // negative reward for not turning when something is on the side
-                    reward = -0.01f;
-                    SetReward(reward);
-                    //Debug.Log("negative reward for not turning when something is on the side " + reward);
-                }
-            }
-            */
         }
     }
 
