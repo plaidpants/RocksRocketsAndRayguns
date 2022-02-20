@@ -74,10 +74,17 @@ public class NetworkManagerRocket : NetworkManager
             // are we done destorying rocks
             if (RockSphere.currentRocks == 0)
             {
-                if (!SceneManager.GetActiveScene().name.Contains("Training"))
+                RockSphere[] Rocks = FindObjectsOfType<RockSphere>();
+
+                // double check with objects on the screen as syncing may not be up to date.
+                if (Rocks.Length == 0)
                 {
-                    // go to next level
-                    NextLevel();
+                    if (!SceneManager.GetActiveScene().name.Contains("Training"))
+                    {
+                        // TODO: HOW DO WE PREVENT THIS BEING CALLED ON CLIENTS??? DOES IT MATTER?
+                        // go to next level
+                        NextLevel();
+                    }
                 }
             }
         }

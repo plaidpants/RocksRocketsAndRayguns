@@ -6,7 +6,7 @@ using UnityEngine;
 public class RocketSphereAI : NetworkBehaviour
 {
     GameObject rocket;
-    float radius = 10;
+    [SyncVar] float radius = 10;
     public float rotationSpeed;
     public float forwardSpeed;
     public GameObject shotPrefab;
@@ -43,6 +43,9 @@ public class RocketSphereAI : NetworkBehaviour
     // Cache it here and Destroy it in OnDestroy to prevent a memory leak.
     Material cachedMaterial;
 
+    [SyncVar] public Vector3 pos = Vector3.zero;
+    [SyncVar] public Quaternion rot = Quaternion.identity;
+
     void OnDestroy()
     {
         // avoid memory leak
@@ -58,10 +61,6 @@ public class RocketSphereAI : NetworkBehaviour
             }
         }
     }
-
-
-    [SyncVar] public Vector3 pos = Vector3.zero;
-    [SyncVar] public Quaternion rot = Quaternion.identity;
 
     public override void OnStartServer()
     {
@@ -93,10 +92,10 @@ public class RocketSphereAI : NetworkBehaviour
         transform.position = Vector3.zero;
 
         // Move rocket child gameobject out to radius in local coords
-        rocket.transform.localPosition = Vector3.forward * radius;
+        pos = rocket.transform.localPosition = Vector3.forward * radius;
 
         // rotations is handled by the parent
-        rocket.transform.localRotation = Quaternion.identity;
+        rot = rocket.transform.localRotation = Quaternion.identity;
 
         rocket.SetActive(true);
 
@@ -135,6 +134,11 @@ public class RocketSphereAI : NetworkBehaviour
 
         // find the rb so we can apply torque during the Update()
         rb = transform.GetComponent<Rigidbody>();
+
+        // move the child rock to original location and rotation from the syncvars since mirror will not do this for us
+        // the rock has moved since creation for clients connecting mid-game, offset is in local coords
+        rocket.transform.localPosition = pos;
+        rocket.transform.localRotation = rot;
 
         //if (trackRocketAI)
         {
