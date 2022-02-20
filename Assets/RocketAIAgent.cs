@@ -6,6 +6,8 @@ using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using Unity.Mathematics;
+using Unity.MLAgents.Policies;
+using Random = UnityEngine.Random;
 
 public class RocketAIAgent : Agent
 {
@@ -20,6 +22,7 @@ public class RocketAIAgent : Agent
         base.Initialize();
         
         lastPoints = 0;
+        GetComponent<BehaviorParameters>().TeamId = (int)Random.Range(0.0f, 100.0f);
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -99,7 +102,7 @@ public class RocketAIAgent : Agent
             if (rocket.points > lastPoints)
             {
                 // big reward if we hit something
-                reward = 3.0f * (rocket.points - lastPoints);
+                reward = 1.0f; // 3.0f * (rocket.points - lastPoints);
                 SetReward(reward);
                 Debug.Log("Reward for points " + rocket.points + " last points " + lastPoints + " reward " + reward);
                 lastPoints = rocket.points;
@@ -123,7 +126,7 @@ public class RocketAIAgent : Agent
             */
         }
 
- 
+ /*
         if (rocket.countRotations != lastCountRotations)
         {
             // negative reward for excessive rotations
@@ -136,7 +139,8 @@ public class RocketAIAgent : Agent
 
             lastCountRotations = rocket.countRotations;
         }
-
+ */
+ /*
         if (rb)
         {
             if (rb.angularVelocity.magnitude < 0.02f)
@@ -170,7 +174,7 @@ public class RocketAIAgent : Agent
                 SetReward(reward);
             }
         }
-
+ */
         if (raySensor)
         {
             if (raySensor.RaySensor != null)
@@ -190,7 +194,7 @@ public class RocketAIAgent : Agent
                                 //Debug.Log("Reward for being near something " + raySensor.DetectableTags.Count + " reward " + reward);
                             }
                             */
-
+                            /*
                             if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[8].HasHit)
                             {
                                 if (rocket.fireInput)
@@ -245,7 +249,7 @@ public class RocketAIAgent : Agent
                                     //Debug.Log("reward thrusting away from something " + reward);
                                 }
                             }
-
+                            */
                             /*
                             if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[0].HasHit 
                                 ||  raySensor.RaySensor.RayPerceptionOutput.RayOutputs[1].HasHit
@@ -283,10 +287,13 @@ public class RocketAIAgent : Agent
     {
         base.OnEpisodeBegin();
 
+        // make sure everyone is on a different team, i.e. every man for himself
+        GetComponent<BehaviorParameters>().TeamId = (int)Random.Range(0.0f, 100.0f);
+
         raySensor = transform.gameObject.GetComponentInChildren<RayPerceptionSensorComponent3D>();
         rocket = transform.gameObject.GetComponent<RocketSphereAI>();
         rb = transform.gameObject.GetComponent<Rigidbody>();
-
+        
         if (rocket)
         {
             lastPoints = rocket.points;
@@ -300,7 +307,7 @@ public class RocketAIAgent : Agent
     public void EpisodeEndGood()
     {
         Debug.Log("reward survived for lifetime " + 0.2f);
-        SetReward(0.2f);
+        //SetReward(0.2f);
         EndEpisode();
     }
 
