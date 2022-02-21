@@ -1,6 +1,6 @@
 # RocksRocketsAndRayguns
 
-Multiplayer VR Spaceship and Rock shooter with Machine learning AI for NPC rockets, focus is on support for Oculus Quest but the original release supported GearVR and the project can be built for other VR platforms and will run and has support and is playable on non-VR systems as well. Availble on Sidequest at the link below.
+Multiplayer VR Spaceship and Rock shooter with Machine learning AI for NPC rockets, focus is on support for Oculus Quest but the original release supported GearVR and the project can be built for other VR platforms and will run and has support and is playable on non-VR systems as well. Available on Sidequest at the link below.
 
 https://sidequestvr.com/app/2240/rocks-rockets-and-rayguns
 
