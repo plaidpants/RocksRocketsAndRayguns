@@ -43,8 +43,8 @@ public class ShotSphere : NetworkBehaviour
     [ServerCallback]
     void OnTriggerEnter(Collider other)
     {
-        // check if we are running into our own shots
-        if (other.transform.gameObject == transform.gameObject)
+        // check if rockets are running into their own shots or if this is also a shot
+        if ((other.transform.gameObject == transform.gameObject) || other.CompareTag("Shot"))
         {
             // ignore our own shots
             return;

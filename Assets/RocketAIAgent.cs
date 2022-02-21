@@ -22,6 +22,9 @@ public class RocketAIAgent : Agent
         base.Initialize();
         
         lastPoints = 0;
+
+        // set the team ID to random so AI's don't avoid shooting each other to avoid a team loss,
+        // not sure if this can be done in the other function or not so I'll put in both places just to be sure
         GetComponent<BehaviorParameters>().TeamId = (int)Random.Range(0.0f, 100.0f);
     }
 
@@ -31,6 +34,16 @@ public class RocketAIAgent : Agent
 
         if (rocket)
         {
+            // What I learned is that you should not overfeed the AI learning with more data than
+            // it needs. Originaly I was trying to send it as much data as pssible but eventually
+            // it seems to work best with just the Ray Sensors 3d and the angular velocity of the rocket
+            // might make sense to send the rocket orientation in the same frame as the anugular velocity,
+            // but it doesn't seem to need it. Also I noticed that when training in the big sphere the rockets
+            // need to move faster and the learning sets the Unity3D Time base to 20, there was significat difference
+            // in learning when running so fast when the rockets need to move fast, learning worked much better whene
+            // Time base was set to a much lower number or even 1. Something to check if you find it's not training for
+            // some reaon.
+
             //sensor.AddObservation(transform.rotation.eulerAngles); // ship on the sphere
 
             /*
@@ -82,6 +95,10 @@ public class RocketAIAgent : Agent
 
         if (rocket)
         {
+            // I tried give little rewards for things I wanted the AI to do but ended up
+            // removing these as they did not help and could result in an AI doing things just
+            // for the little rewards
+
             rocket.horizontalInput = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f);
             // little reward turning
             //SetReward(0.001f * Mathf.Abs(rocket.horizontalInput));
@@ -99,14 +116,19 @@ public class RocketAIAgent : Agent
                 rocket.fireInput = false;
             }
 
+            // this is the only reward that matters, and in fact I just want to indicate a hit for 1.0 and
+            // NOT scale this reward depending on what was hit.
+
             if (rocket.points > lastPoints)
             {
                 // big reward if we hit something
                 reward = 1.0f; // 3.0f * (rocket.points - lastPoints);
                 SetReward(reward);
-                Debug.Log("Reward for points " + rocket.points + " last points " + lastPoints + " reward " + reward);
+                Debug.Log("Reward for points " /* + rocket.points + " last points " + lastPoints + " reward " */ + reward);
                 lastPoints = rocket.points;
             }
+
+            // More little rewards that weren't really helpful
 
             /*
             if (rocket.fireInput)
@@ -126,6 +148,11 @@ public class RocketAIAgent : Agent
             */
         }
 
+        // I tried to keep the AI from sitting and spinning which was an aretifact of feeding the AI
+        // too much info above. This seemed to result in depressed AI that would sit and spin even when I
+        // made this negative reward grow exponentially. Negative reward that was consitant seems to be
+        // desired by the AI than trying to figure out too much input and not getting enough positive rewards
+
  /*
         if (rocket.countRotations != lastCountRotations)
         {
@@ -140,6 +167,9 @@ public class RocketAIAgent : Agent
             lastCountRotations = rocket.countRotations;
         }
  */
+
+        // This reward resulted in slower and more controllable rockets but is not adventagous when
+        // you need to move faster to get out of the way or find a new rock when there are not many left
  /*
         if (rb)
         {
@@ -175,6 +205,10 @@ public class RocketAIAgent : Agent
             }
         }
  */
+
+        // This set of rewards was actually my first glimpse of something that looked resonable but
+        // ultimately removing all this resulted in an even more impressive AI
+
         if (raySensor)
         {
             if (raySensor.RaySensor != null)
@@ -250,6 +284,9 @@ public class RocketAIAgent : Agent
                                 }
                             }
                             */
+                            
+                            // this reward was not as good as I had hoped and did not use it much
+
                             /*
                             if (raySensor.RaySensor.RayPerceptionOutput.RayOutputs[0].HasHit 
                                 ||  raySensor.RaySensor.RayPerceptionOutput.RayOutputs[1].HasHit
@@ -287,7 +324,8 @@ public class RocketAIAgent : Agent
     {
         base.OnEpisodeBegin();
 
-        // make sure everyone is on a different team, i.e. every man for himself
+        // set the team ID to random so AI's don't avoid shooting each other to avoid a team loss,
+        // not sure if this can be done in the other function or not so I'll put in both places just to be sure
         GetComponent<BehaviorParameters>().TeamId = (int)Random.Range(0.0f, 100.0f);
 
         raySensor = transform.gameObject.GetComponentInChildren<RayPerceptionSensorComponent3D>();
@@ -304,6 +342,8 @@ public class RocketAIAgent : Agent
         }
     }
 
+    // I added this to try and end early and reward a long lived AI, but may have push some
+    // AI's to avoid taking chances and sitting around waiting for this reward
     public void EpisodeEndGood()
     {
         Debug.Log("reward survived for lifetime " + 0.2f);
@@ -311,12 +351,16 @@ public class RocketAIAgent : Agent
         EndEpisode();
     }
 
+    // this is the lose reward, AI rocket got hit with a rock or a shot
     public void EpisodeEndBad()
     {
         Debug.Log("Negative reward for dying " + -1.0f);
         SetReward(-1.0f);
         EndEpisode();
     }
+
+    // used this to create demos to use with the GAIL learning module, needs quite a bit of recordings to be helpful however
+    // seemed to result in better behaved AIs when not using other rewards.
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
