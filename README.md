@@ -1,6 +1,8 @@
 # RocksRocketsAndRayguns
 
-Multiplayer VR Spaceship and Rock shooter with Machine learning AI for NPC rockets, focus is on support for Oculus Quest but the original release supported GearVR and the project can be built for other VR platforms and will run and has support and is playable on non-VR systems as well.
+Multiplayer VR Spaceship and Rock shooter with Machine learning AI for NPC rockets, focus is on support for Oculus Quest but the original release supported GearVR and the project can be built for other VR platforms and will run and has support and is playable on non-VR systems as well. Availble on Sidequest at the link below.
+
+https://sidequestvr.com/app/2240/rocks-rockets-and-rayguns
 
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/k03XqD0PCIc/0.jpg)](http://www.youtube.com/watch?v=k03XqD0PCIc "Rocks Rockets And Rayguns")
 
@@ -19,7 +21,7 @@ This game uses spherical angular motion physics for all objects. Player's VR hea
 
 ![screenshot](/../master/sphere.jpg?raw=true) 
 
-Uses 3 Skyboxes & Uses 3 Skyboxes 2 https://assetstore.unity.com/packages/2d/textures-materials/sky/3-skyboxes-25142 & https://assetstore.unity.com/packages/2d/textures-materials/sky/3-skyboxes-25142 by Bright Shining Star http://brightshiningstar.webs.com
+Uses 3 Skyboxes & 3 Skyboxes 2 https://assetstore.unity.com/packages/2d/textures-materials/sky/3-skyboxes-25142 & https://assetstore.unity.com/packages/2d/textures-materials/sky/3-skyboxes-25142 by Bright Shining Star http://brightshiningstar.webs.com
 
 Sound effects created with bxfr http://www.bfxr.net/
 
