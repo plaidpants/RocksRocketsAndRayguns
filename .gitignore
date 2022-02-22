@@ -9,6 +9,8 @@ Debug/
 Build/
 BuildAndroid/
 BuildWindows/
+BuildWindowsVR/
+BuildMac/
 
 # ===================================== #
 # Visual Studio / MonoDevelop generated #
@@ -75,3 +77,4 @@ Assets/Draw Call Minimizer
 Assets/VolumetricLines
 Assets/Moon Landscape
 Assets/ML-Agents
+Assets/SteamVR

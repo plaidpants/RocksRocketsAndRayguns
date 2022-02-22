@@ -21,6 +21,9 @@ public class RockSphere : NetworkBehaviour
     static public int currentRocks = 0; // number of rocks currently active
     static public int totalRocks = 0; // number of rocks currently active plus subsequent rocks
     static public int destroyedRocks = 0; // number of rocks destoryed
+    Rigidbody rb;
+    public float rotationSpeed;
+    float currentRotationSpeed;
 
     [ClientRpc]
     void rpcSetRockStats(int current, int total, int destroyed)
@@ -47,37 +50,48 @@ public class RockSphere : NetworkBehaviour
         base.OnStartServer();
 
         // only do the final rock positioning for the rock on the server use syncvars to sync with the clients
- 
+
+        // Find the rock child object
+        rock = transform.Find("Rock.old").gameObject;
+
         // get the current radius and position from parent gameobject
         radius = transform.position.magnitude;
-        pos = transform.position;
 
         // get the current rotation from the parent position
-        rot = Quaternion.FromToRotation(Vector3.forward, pos);
+        transform.rotation = Quaternion.FromToRotation(Vector3.forward, transform.position);
 
         // reset the parent gameobject position back to the center
         transform.position = Vector3.zero;
-        transform.rotation = Quaternion.identity;
+        //transform.rotation = Quaternion.identity;
 
-        // move the child rock to original location and rotation
-        rock = transform.Find("Rock.old").gameObject;
-        rock.transform.localPosition = pos;
-        rock.transform.localRotation = rot;
+        // Move rock child gameobject out to radius in local coords
+        pos = rock.transform.localPosition = Vector3.forward * radius;
+
+        // rotations is handled by the parent
+        rot = rock.transform.localRotation = Quaternion.identity;
+
+        // Move rock child gameobject out to radius
+        //rock.transform.position = Vector3.forward * radius;
+        //rock.transform.rotation = Quaternion.FromToRotation(Vector3.forward, rocket.transform.position);
 
         // apply some rotational torque to the parent gameobject object with the rock attached as a child
-        Rigidbody rb = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
+
         Vector3 torque = Random.onUnitSphere * (Random.Range(minSpeed, maxSpeed) / radius);
         // ???? note this could be pointing right at us or away so no torque would be added need to catch this and get a new torque
-        rb.AddTorque(Vector3.Cross(torque, pos.normalized));
+        rb.AddTorque(Vector3.Cross(torque, rock.transform.position.normalized));
 
         // add some rotation to the rock
-        //rb.AddTorque(new Vector3(0,10,0));
+        //float rotation = Random.Range(minRotationSpeed, maxRotationSpeed);
+        //rb.AddTorque(transform.forward * 100);
 
         totalRocks++;
         currentRocks++;
 
  //       Debug.Log("OnStartServer current rocks " + currentRocks + " Rocks " + currentRocks + " total " + totalRocks + " destoyed " + destroyedRocks);
         rpcSetRockStats(currentRocks, totalRocks, destroyedRocks);
+
+        currentRotationSpeed = Random.Range(-rotationSpeed, rotationSpeed);
     }
 
     void Start()
@@ -151,5 +165,11 @@ public class RockSphere : NetworkBehaviour
     // Update is called once per frame
     void Update ()
     {
+        if (!isServer) return;
+
+        if (!rb) return;
+
+        Quaternion turn = Quaternion.Euler(0f, 0f, currentRotationSpeed * Time.deltaTime);
+        rb.MoveRotation(rb.rotation * turn);
     }
 }
