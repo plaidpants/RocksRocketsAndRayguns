@@ -1,0 +1,16 @@
+{
+  "source": "Unity",
+  "applications": [
+    {
+      "app_key": "application.generated.unity.rocksrocketsandrayguns.exe",
+      "launch_type": "url",
+      "url": "steam://launch/",
+      "action_manifest_path": "J:\\Unity Projects\\RocksRocketsAndRayguns\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "strings": {
+        "en_us": {
+          "name": "Rocks, Rockets And Rayguns [Testing]"
+        }
+      }
+    }
+  ]
+}
